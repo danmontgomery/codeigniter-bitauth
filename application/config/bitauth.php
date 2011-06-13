@@ -25,9 +25,21 @@ $config['primary_key'] = 'id';
 $config['default_group'] = 'users';
 
 /**
- * Administrators group (full access)
+ * Name of the cookie where "remember me" login is kept
+ * (Prefixed with the cookie_prefix value in config.php, if one is set)
  */
-$config['admin_group'] = 'admin';
+$config['remember_token_name'] = 'rememberme';
+
+/**
+ * Number of seconds the remembered login is valid
+ * Default: 1 week
+ */
+$config['remember_token_expires'] = 604800;
+
+/**
+ * Does the "remember me" expiration time update every time the user does something?
+ */
+$config['remember_token_updates'] = TRUE;
 
 /**
  * Number of days before passwords expire. To disable, set to FALSE
@@ -66,7 +78,18 @@ $config['pwd_complexity'] = array(
  * in your code. eg: if($this->bitauth->has_perm('example_perm_1'))
  */
 $config['permissions'] = array(
+
+/**
+ * THE FIRST PERMISSION IS ALWAYS THE ADMINISTRATOR PERMISSION
+ * ANY GROUPS GIVEN THIS PERMISSION WILL HAVE FULL ACCESS
+ */
+	'is_admin' => 'User is an Administrator',
+
+/**
+ * Add as many permissions slugs here as you like.
+ * Follow the format:
+ * 'permission_slug' => 'Permission Description',
+ */
 	'example_perm_1' => 'Example Permission 1',
-	'example_perm_2' => 'Example Permission 2',
-	'example_perm_3' => 'Example Permission 3'
+	'example_perm_2' => 'Example Permission 2'
 );
