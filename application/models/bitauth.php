@@ -21,19 +21,19 @@ class Bitauth extends CI_Model
 	public $_pwd_max_length;
 	public $_pwd_complexity;
 	public $_permissions;
-	
+
 	private $_all_permissions;
 
 	public function __construct()
 	{
 		parent::__construct();
-		
+
 		if(!function_exists('gmp_init'))
 		{
 			log_message('error', 'You must enable php_gmp to use Bitauth.');
 			show_error('You must enable php_gmp to use Bitauth.');
 		}
-		
+
 		$this->load->database();
 		$this->load->library('session');
 		$this->load->config('bitauth', TRUE);
@@ -47,55 +47,36 @@ class Bitauth extends CI_Model
 		$this->_pwd_min_length	= $this->config->item('pwd_min_length', 'bitauth');
 		$this->_pwd_max_length	= $this->config->item('pwd_max_length', 'bitauth');
 		$this->_pwd_complexity	= $this->config->item('pwd_complexity', 'bitauth');
-		
+
 		$this->_all_permissions	= $this->config->item('permissions', 'bitauth');
-		
+
 		if($this->logged_in())
 		{
-			$session_data = $this->session->all_userdata();
-			foreach($session_data as $_key => $_value)
-			{
-				if(substr($_key, 0, 8) !== 'bitauth_')
-				{
-					continue;
-				}
-				
-				$_key = substr($_key, 0, 8);
-				
-				if(!isset($this->$_key))
-				{
-					$this->$_key = $_value;
-				}
-				else
-				{
-					log_message('error', 'You can\'t overwrite default BitAuth properties with custom userdata. Please change the name of the field: '.$_key);
-					show_error('You can\'t overwrite default BitAuth properties with custom userdata. Please change the name of the field: '.$_key);
-				}
-			}
+			$this->get_session_values();
 		}
-		
+
 	}
-	
+
 	/**
 	 * Bitauth::has_perm()
 	 *
 	 */
 	public function has_perm($slug)
 	{
-		if(($index = array_search($slug, $this->_all_permissions)) !== FALSE)
+		if(($index = array_search($slug, array_keys($this->_all_permissions))) !== FALSE)
 		{
 			if($slug != $this->_admin_group && $this->has_perm($this->_admin_group))
 			{
 				return TRUE;
 			}
-			
+
 			$check = gmp_init(0);
 			gmp_setbit($check, $index);
 
 			return gmp_strval(gmp_and($this->_permissions, $check)) === gmp_strval($check);
 		}
 	}
-	
+
 	/**
 	 * Bitauth::login()
 	 *
@@ -108,30 +89,22 @@ class Bitauth extends CI_Model
 			->join($this->_table['assoc'], $this->_table['assoc'].'.user_id = '.$this->table['user'].'.'.$this->_pk, 'left')
 			->join($this->_table['groups'], $this->_table['groups'].'.'.$this->pk.' = '.$this->_table['assoc'].'.group_id', 'left')
 			->where($this->_table['users'].'.'.$this->_username_field, $username)
-			->get($this->_table['user'], 1);
-			
+			->group_by($this->_table['users'].'.'.$this->_pk)
+			->limit(1)
+			->get($this->_table['user']);
+
 		if($query !== FALSE && $query->num_rows())
 		{
 			$user = $query->row();
-			
+
 			if(sha1($password.$user->salt) === $user->password)
 			{
-				$session_data = array();
-				foreach($user as $_key => $_value)
-				{
-					if($_key !== 'salt' && $_key !== 'password')
-					{
-						$session_data['bitauth_'.$_key] = $_value;
-					}
-				}
-				
-				$this->session->set_userdata($session_data);
-				
+				$this->set_session_values($user);
+
 				if($remember != FALSE)
 				{
 					$this->update_remember_token();
 				}
-				
 			}
 		}
 	}
@@ -150,31 +123,86 @@ class Bitauth extends CI_Model
 				$this->session->unset_userdata($_key);
 			}
 		}
-		
+
 		unset($this->{$this->_username_field});
 		$this->delete_remember_token();
-		
+
 		return;
 	}
-	
+
+	/**
+	 * Bitauth::set_session_values()
+	 *
+	 */
+	public function set_session_values($values)
+	{
+		$session_data = array();
+		foreach($values as $_key => $_value)
+		{
+			if($_key !== 'salt' && $_key !== 'password')
+			{
+				$session_data['bitauth_'.$_key] = $_value;
+			}
+		}
+
+		$this->session->set_userdata($session_data);
+	}
+
+	/**
+	 * Bitauth::get_session_values()
+	 *
+	 */
+	public function get_session_values()
+	{
+		$session_data = $this->session->all_userdata();
+		foreach($session_data as $_key => $_value)
+		{
+			if(substr($_key, 0, 8) !== 'bitauth_')
+			{
+				continue;
+			}
+
+			$_key = substr($_key, 0, 8);
+
+			if(!isset($this->$_key))
+			{
+				$this->$_key = $_value;
+			}
+			else
+			{
+				log_message('error', 'You can\'t overwrite default BitAuth properties with custom userdata. Please change the name of the field: '.$_key);
+				show_error('You can\'t overwrite default BitAuth properties with custom userdata. Please change the name of the field: '.$_key);
+			}
+		}
+	}
+
 	/**
 	 * Bitauth::update_remember_token()
 	 *
 	 */
 	public function update_remember_token()
 	{
-		
+
 	}
-	
+
 	/**
 	 * Bitauth::delete_remember_token()
 	 *
 	 */
 	public function delete_remember_token()
 	{
-		
+
 	}
-	
+
+	/**
+	 * Bitauth::hash_password()
+	 *
+	 */
+	public function hash_password($str)
+	{
+		return sha1($str.$this->salt());
+	}
+
 	/**
 	 * Bitauth::salt()
 	 *
@@ -183,7 +211,7 @@ class Bitauth extends CI_Model
 	{
 		return substr(md5(mt_rand(0, PHP_INT_MAX).time()), -10);
 	}
-	
+
 	/**
 	 * Bitauth::logged_in()
 	 *

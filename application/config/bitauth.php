@@ -66,7 +66,7 @@ $config['pwd_complexity'] = array(
  * in your code. eg: if($this->bitauth->has_perm('example_perm_1'))
  */
 $config['permissions'] = array(
-	'example_perm_1',
-	'example_perm_2',
-	'example_perm_3'
+	'example_perm_1' => 'Example Permission 1',
+	'example_perm_2' => 'Example Permission 2',
+	'example_perm_3' => 'Example Permission 3'
 );
