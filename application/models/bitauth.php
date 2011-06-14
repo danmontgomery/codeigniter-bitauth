@@ -260,6 +260,15 @@ class Bitauth extends CI_Model
 	}
 	
 	/**
+	 * Bitauth::add_user()
+	 *
+	 */
+	public function add_user()
+	{
+		
+	}
+	
+	/**
 	 * Bitauth::has_perm()
 	 *
 	 */
