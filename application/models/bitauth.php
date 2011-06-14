@@ -31,10 +31,12 @@ class Bitauth extends CI_Model
 	{
 		parent::__construct();
 
+		$this->lang->load('bitauth');
+
 		if(!function_exists('gmp_init'))
 		{
-			log_message('error', 'You must enable php_gmp to use Bitauth.');
-			show_error('You must enable php_gmp to use Bitauth.');
+			log_message('error', $this->lang->line('bitauth_enable_gmp'));
+			show_error($this->lang->line('bitauth_enable_gmp'));
 		}
 
 		$this->load->database();
@@ -53,18 +55,18 @@ class Bitauth extends CI_Model
 		$this->_pwd_max_length			= $this->config->item('pwd_max_length', 'bitauth');
 		$this->_pwd_complexity			= $this->config->item('pwd_complexity', 'bitauth');
 
-		$this->_all_permissions	= $this->config->item('permissions', 'bitauth');
-		
+		$this->_all_permissions			= $this->config->item('permissions', 'bitauth');
+
 		// Grab the first permission on the list as the administrator permission
 		$slugs = array_keys($this->_all_permissions);
 		$this->_admin_permission = $slugs[0];
-		
+
 		unset($slugs);
 
 		if($this->logged_in())
 		{
 			$this->get_session_values();
-			
+
 			if($this->_remember_token_updates)
 			{
 				$this->update_remember_token();
@@ -105,14 +107,14 @@ class Bitauth extends CI_Model
 				{
 					$this->update_remember_token();
 				}
-				
+
 				return TRUE;
 			}
 		}
-		
+
 		return FALSE;
 	}
-	
+
 	/**
 	 * Bitauth::login_from_token()
 	 *
@@ -123,16 +125,16 @@ class Bitauth extends CI_Model
 		{
 			return FALSE;
 		}
-		
+
 		$token = explode('|', $token);
 		$username = $token[0];
 		$session_id = $token[1];
-		
+
 		if($this->login($username, NULL, (bool)$this->_remember_token_updates, $session_id))
 		{
 			return TRUE;
 		}
-		
+
 		$this->delete_remember_token();
 		return FALSE;
 	}
@@ -198,8 +200,8 @@ class Bitauth extends CI_Model
 			}
 			else
 			{
-				log_message('error', 'You can\'t overwrite default BitAuth properties with custom userdata. Please change the name of the field: '.$_key);
-				show_error('You can\'t overwrite default BitAuth properties with custom userdata. Please change the name of the field: '.$_key);
+				log_message('error', $this->lang->line('bitauth_data_error').$_key);
+				show_error($this->lang->line('bitauth_data_error').$_key);
 			}
 		}
 	}
@@ -214,10 +216,10 @@ class Bitauth extends CI_Model
 		{
 			return;
 		}
-		
+
 		$user_id = $this->_username_field;
 		$session_id = sha1(mt_rand(0, PHP_INT_MAX).time());
-		
+
 		$cookie = array(
 			'prefix' => $this->config->item('cookie_prefix'),
 			'name' => $this->_remember_token_name,
@@ -227,9 +229,9 @@ class Bitauth extends CI_Model
 			'path' => $this->config->item('cookie_path'),
 			'secure' => $this->config->item('cookie_secure')
 		);
-		
+
 		$this->input->set_cookie($cookie);
-		
+
 		$pk = $this->_pk;
 		$this->db
 			->set('remember_me', $this->$user_id.'|'.$session_id)
@@ -249,25 +251,25 @@ class Bitauth extends CI_Model
 				'name' => $this->_remember_token_name,
 				'expire' => ''
 			);
-			
+
 			$this->db
 				->set('remember_me', '')
 				->where('remember_me', $this->input->cookie($this->_remember_token_name))
 				->update($this->_table['users']);
-				
+
 			$this->input->set_cookie($cookie);
 		}
 	}
-	
+
 	/**
 	 * Bitauth::add_user()
 	 *
 	 */
 	public function add_user()
 	{
-		
+
 	}
-	
+
 	/**
 	 * Bitauth::has_perm()
 	 *

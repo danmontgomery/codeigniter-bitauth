@@ -74,6 +74,18 @@ $config['pwd_complexity'] = array(
 );
 
 /**
+ * Which characters are included in each complexity check. Must be in
+ * regex-friendly format. Using the Posix Collating Sequences should
+ * make these language-independent, but are here in case you want to
+ * change them.
+ */
+$config['pwd_complexity_chars'] = array(
+	'uppercase' => '[:upper:]',
+	'number' => '[:digit:]',
+	'special' => '[:punct:]'
+);
+
+/**
  * Your permissions slugs. These are how you call permissions checks
  * in your code. eg: if($this->bitauth->has_perm('example_perm_1'))
  */

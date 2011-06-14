@@ -2,22 +2,23 @@
 
 class Bitauth_example extends CI_Controller
 {
-	
+
 	public function __construct()
 	{
 		parent::__construct();
-		
+
 		$this->load->model('bitauth');
 	}
-	
+
 	public function index()
 	{
-		
+
 	}
-	
+
 	public function logout()
 	{
-		
+		$this->bitauth->logout();
+		redirect('bitauth_example');
 	}
-	
+
 }
