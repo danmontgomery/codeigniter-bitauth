@@ -23,9 +23,11 @@ class Bitauth extends CI_Model
 	public $_pwd_min_length;
 	public $_pwd_max_length;
 	public $_pwd_complexity;
+	public $_pwd_complexity_chars;
 	public $_permissions;
 
 	private $_all_permissions;
+	private $_error;
 
 	public function __construct()
 	{
@@ -51,9 +53,11 @@ class Bitauth extends CI_Model
 		$this->_remember_token_expires	= $this->config->item('remember_token_expires', 'bitauth');
 		$this->_remember_token_updates	= $this->config->item('remember_token_updates', 'bitauth');
 		$this->_pwd_max_age				= $this->config->item('pwd_max_age', 'bitauth');
+		$this->_pwd_age_notification	= $this->config->item('pwd_age_notification', 'bitauth');
 		$this->_pwd_min_length			= $this->config->item('pwd_min_length', 'bitauth');
 		$this->_pwd_max_length			= $this->config->item('pwd_max_length', 'bitauth');
 		$this->_pwd_complexity			= $this->config->item('pwd_complexity', 'bitauth');
+		$this->_pwd_complexity_chars	= $this->config->item('pwd_complexity_chars', 'bitauth');
 
 		$this->_all_permissions			= $this->config->item('permissions', 'bitauth');
 
@@ -76,6 +80,8 @@ class Bitauth extends CI_Model
 		{
 			$this->login_from_token();
 		}
+
+		$this->set_error($this->session->flashdata('bitauth_error'), FALSE);
 
 	}
 
@@ -112,6 +118,7 @@ class Bitauth extends CI_Model
 			}
 		}
 
+		$this->set_error(lang('bitauth_login_failed'));
 		return FALSE;
 	}
 
@@ -265,9 +272,62 @@ class Bitauth extends CI_Model
 	 * Bitauth::add_user()
 	 *
 	 */
-	public function add_user()
+	public function add_user($data)
 	{
+		if(! is_array($data) || ! is_object($data))
+		{
+			$this->set_error(lang('bitauth_add_user_datatype'));
+			return FALSE;
+		}
 
+		$data = (array)$data;
+
+		if(empty($data[$this->_username_field]))
+		{
+			$this->set_error(sprintf(lang('bitauth_username_required'), $this->_username_field));
+			return FALSE;
+		}
+
+		if(empty($data['password']))
+		{
+			$this->set_error(lang('bitauth_password_required'));
+			return FALSE;
+		}
+
+		// Just in case
+		if(! empty($data[$this->_pk]))
+		{
+			unset($data[$this->_pk]);
+		}
+
+		$this->db->trans_start();
+		$this->db->insert($this->_table['users'], $data);
+
+		$user_id = $this->db->insert_id();
+		$group_id = $this->get_group_by_name($this->_default_group);
+
+		if($group_id)
+		{
+			$this->db->insert(array('user_id' => $user_id, 'group_id' => $group_id), $this->_table['assoc']);
+		}
+		else
+		{
+			$this->set_error(lang('bitauth_no_default_group'));
+			$this->db->trans_rollback();
+
+			return FALSE;
+		}
+
+		if($this->db->trans_status() === FALSE)
+		{
+			$this->set_error(lang('bitauth_add_user_failed'));
+			$this->db->trans_rollback();
+
+			return FALSE;
+		}
+
+		$this->db->trans_commit();
+		return TRUE;
 	}
 
 	/**
@@ -290,6 +350,108 @@ class Bitauth extends CI_Model
 		}
 	}
 
+	/**
+	 * Bitauth::username_is_unique()
+	 *
+	 */
+	public function username_is_unique($username, $exclude_user = FALSE)
+	{
+		if($exclude_user != FALSE)
+		{
+			$this->db->where($this->_pk.' !=', (int)$exclude_user);
+		}
+
+		$query = $this->db->where($this->_username_field, $username)->get($this->_table['users']);
+		if($query && $query->num_rows())
+		{
+			$this->set_error(lang('bitauth_username_unique'))
+			return FALSE;
+		}
+
+		return TRUE;
+	}
+
+	/**
+	 * Bitauth::password_is_valid()
+	 *
+	 */
+	public function password_is_valid($password)
+	{
+		if($this->_pwd_min_length > 0 && strlen($password) < $this->_pwd_min_length)
+		{
+			$this->set_error(lang('bitauth_passwd_min_length'));
+			return FALSE;
+		}
+
+		if($this->_pwd_max_length > 0 && strlen($password) > $this->_pwd_max_length)
+		{
+			$this->set_error(lang('bitauth_passwd_max_length'));
+			return FALSE;
+		}
+
+		foreach($this->_pwd_complexity_chars as $_label => $_rule)
+		{
+			if(preg_match('/'.$_rule.'/', $password) < $this->_pwd_complexity[$_label])
+			{
+				$this->set_error(lang('bitauth_passwd_complexity'));
+				return FALSE;
+			}
+		}
+
+		return TRUE;
+	}
+
+	/**
+	 * Bitauth::password_almost_expired()
+	 *
+	 */
+	public function password_almost_expired()
+	{
+		if($this->_pwd_max_age == 0)
+		{
+			return FALSE;
+		}
+
+		return (bool)(time() > ( ($this->_pwd_last_set * 86400) + (($this->_pwd_max_age - $this->_pwd_age_notification) * 86400)));
+	}
+
+	/**
+	 * Bitauth::password_is_expired()
+	 *
+	 */
+	public function password_is_expired()
+	{
+		if($this->_pwd_max_age == 0)
+		{
+			return FALSE;
+		}
+
+		return (bool)(time() > ( (strtotime($this->_pwd_last_set) * 86400) + ($this->_pwd_max_age * 86400) );
+	}
+
+	/**
+	 * Bitauth::set_error()
+	 *
+	 */
+	public function set_error($str, $update_session = TRUE)
+	{
+		$this->_error = $str;
+
+		if($update_session == TRUE)
+		{
+			$this->session->set_flashdata('bitauth_error', $this->_error);
+		}
+	}
+
+	/**
+	 * Bitauth::get_error()
+	 *
+	 */
+	public function get_error()
+	{
+		return $this->_error;
+	}
+	
 	/**
 	 * Bitauth::hash_password()
 	 *
