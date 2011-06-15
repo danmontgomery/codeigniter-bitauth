@@ -6,13 +6,13 @@
 </head>
 <body>
     <?php
-		echo form_open('bitauth/login');
+		echo form_open(current_url());
 
 		echo form_label(lang('bitauth_username'), 'username');
 		echo form_input('username', set_value('username'), array('id' => 'username'));
 		echo form_label(lang('bitauth_password'), 'password');
 		echo form_password('password', NULL, array('id' => 'password'));
-		echo form_submit(lang('bitauth_login'));
+		echo form_submit('login', lang('bitauth_login'));
 
 		echo validation_errors();
 
