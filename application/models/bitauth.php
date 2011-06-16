@@ -24,6 +24,8 @@ class Bitauth extends CI_Model
 	public $_pwd_max_length;
 	public $_pwd_complexity;
 	public $_pwd_complexity_chars;
+	public $_error_delim_prefix = '<p>';
+	public $_error_delim_suffix = '</p>';
 	public $_permissions;
 
 	private $_all_permissions;
@@ -94,12 +96,12 @@ class Bitauth extends CI_Model
 		$query = $this->db
 			->select($this->_table['users'].'.*')
 			->select('BIT_OR('.$this->_table['groups'].'.permissions) AS permissions', FALSE)
-			->join($this->_table['assoc'], $this->_table['assoc'].'.user_id = '.$this->table['user'].'.'.$this->_pk, 'left')
-			->join($this->_table['groups'], $this->_table['groups'].'.'.$this->pk.' = '.$this->_table['assoc'].'.group_id', 'left')
+			->join($this->_table['assoc'], $this->_table['assoc'].'.user_id = '.$this->_table['users'].'.'.$this->_pk, 'left')
+			->join($this->_table['groups'], $this->_table['groups'].'.'.$this->_pk.' = '.$this->_table['assoc'].'.group_id', 'left')
 			->where($this->_table['users'].'.'.$this->_username_field, $username)
 			->group_by($this->_table['users'].'.'.$this->_pk)
 			->limit(1)
-			->get($this->_table['user']);
+			->get($this->_table['users']);
 
 		if($query !== FALSE && $query->num_rows())
 		{
@@ -118,7 +120,7 @@ class Bitauth extends CI_Model
 			}
 		}
 
-		$this->set_error(lang('bitauth_login_failed'));
+		$this->set_error(sprintf(lang('bitauth_login_failed'), lang('bitauth_'.$this->_username_field)));
 		return FALSE;
 	}
 
@@ -133,7 +135,7 @@ class Bitauth extends CI_Model
 			return FALSE;
 		}
 
-		$token = explode('|', $token);
+		$token = explode("\n", $token);
 		$username = $token[0];
 		$session_id = $token[1];
 
@@ -230,7 +232,7 @@ class Bitauth extends CI_Model
 		$cookie = array(
 			'prefix' => $this->config->item('cookie_prefix'),
 			'name' => $this->_remember_token_name,
-			'value' => $this->$user_id.'|'.$session_id,
+			'value' => $this->$user_id."\n".$session_id,
 			'expire' => $this->_remember_token_expires,
 			'domain' => $this->config->item('cookie_domain'),
 			'path' => $this->config->item('cookie_path'),
@@ -274,7 +276,7 @@ class Bitauth extends CI_Model
 	 */
 	public function add_user($data)
 	{
-		if(! is_array($data) || ! is_object($data))
+		if(! is_array($data) && ! is_object($data))
 		{
 			$this->set_error(lang('bitauth_add_user_datatype'));
 			return FALSE;
@@ -300,6 +302,10 @@ class Bitauth extends CI_Model
 			unset($data[$this->_pk]);
 		}
 
+		$data['salt'] = $this->salt();
+		$data['password'] = $this->hash_password($data['password'], $data['salt']);
+		$data['password_last_set'] = date('Y-m-d H:i:s', time());
+
 		$this->db->trans_start();
 		$this->db->insert($this->_table['users'], $data);
 
@@ -308,7 +314,7 @@ class Bitauth extends CI_Model
 
 		if($group_id)
 		{
-			$this->db->insert(array('user_id' => $user_id, 'group_id' => $group_id), $this->_table['assoc']);
+			$this->db->insert($this->_table['assoc'], array('user_id' => $user_id, 'group_id' => $group_id));
 		}
 		else
 		{
@@ -364,7 +370,7 @@ class Bitauth extends CI_Model
 		$query = $this->db->where($this->_username_field, $username)->get($this->_table['users']);
 		if($query && $query->num_rows())
 		{
-			$this->set_error(lang('bitauth_username_unique'))
+			$this->set_error(lang('bitauth_unique_username'));
 			return FALSE;
 		}
 
@@ -379,13 +385,13 @@ class Bitauth extends CI_Model
 	{
 		if($this->_pwd_min_length > 0 && strlen($password) < $this->_pwd_min_length)
 		{
-			$this->set_error(lang('bitauth_passwd_min_length'));
+			$this->set_error(sprintf(lang('bitauth_passwd_min_length'), $this->_pwd_min_length));
 			return FALSE;
 		}
 
 		if($this->_pwd_max_length > 0 && strlen($password) > $this->_pwd_max_length)
 		{
-			$this->set_error(lang('bitauth_passwd_max_length'));
+			$this->set_error(sprintf(lang('bitauth_passwd_max_length'), $this->_pwd_max_length));
 			return FALSE;
 		}
 
@@ -393,7 +399,7 @@ class Bitauth extends CI_Model
 		{
 			if(preg_match('/'.$_rule.'/', $password) < $this->_pwd_complexity[$_label])
 			{
-				$this->set_error(lang('bitauth_passwd_complexity'));
+				$this->set_error(sprintf(lang('bitauth_passwd_complexity'), $this->complexity_requirements()));
 				return FALSE;
 			}
 		}
@@ -412,7 +418,7 @@ class Bitauth extends CI_Model
 			return FALSE;
 		}
 
-		return (bool)(time() > ( ($this->_pwd_last_set * 86400) + (($this->_pwd_max_age - $this->_pwd_age_notification) * 86400)));
+		return (bool)(time() > ( strtotime($this->password_last_set) + (($this->_pwd_max_age - $this->_pwd_age_notification) * 86400)));
 	}
 
 	/**
@@ -426,7 +432,24 @@ class Bitauth extends CI_Model
 			return FALSE;
 		}
 
-		return (bool)(time() > ( (strtotime($this->_pwd_last_set) * 86400) + ($this->_pwd_max_age * 86400) );
+		return (bool)(time() > ( strtotime($this->password_last_set) + ($this->_pwd_max_age * 86400) ));
+	}
+
+	/**
+	 * Bitauth::get_group_by_name()
+	 *
+	 */
+	public function get_group_by_name($group_name)
+	{
+		$_pk = $this->_pk;
+
+		// @todo Make this case inensitive?
+		if($query = $this->db->where('name', $group_name)->get($this->_table['groups']))
+		{
+			return $query->row()->$_pk;
+		}
+
+		return FALSE;
 	}
 
 	/**
@@ -449,16 +472,26 @@ class Bitauth extends CI_Model
 	 */
 	public function get_error()
 	{
-		return $this->_error;
+		return $this->_error_delim_prefix.$this->_error.$this->_error_delim_suffix;
 	}
-	
+
+	/**
+	 * Bitauth::set_error_delimiters()
+	 *
+	 */
+	public function set_error_delimiters($prefix, $suffix)
+	{
+		$this->_error_delim_prefix = $prefix;
+		$this->_error_delim_suffix = $suffix;
+	}
+
 	/**
 	 * Bitauth::hash_password()
 	 *
 	 */
-	public function hash_password($str)
+	public function hash_password($str, $salt)
 	{
-		return sha1($str.$this->salt());
+		return sha1($str.$salt);
 	}
 
 	/**
@@ -477,6 +510,22 @@ class Bitauth extends CI_Model
 	public function logged_in()
 	{
 		return (bool)$this->session->userdata($this->_username_field);
+	}
+
+	/**
+	 * Bitauth::complexity_requirements()
+	 *
+	 */
+	public function complexity_requirements()
+	{
+		$ret = array();
+
+		foreach($this->_pwd_complexity as $_label => $_count)
+		{
+			$ret[] = lang('bitauth_pwd_'.$_label).': '.$_count;
+		}
+
+		return implode('<br/>', $ret);
 	}
 
 }

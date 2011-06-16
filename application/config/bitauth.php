@@ -22,7 +22,7 @@ $config['primary_key'] = 'id';
 /**
  * Default group users are added to when they first register
  */
-$config['default_group'] = 'users';
+$config['default_group'] = 'Users';
 
 /**
  * Name of the cookie where "remember me" login is kept
@@ -59,9 +59,9 @@ $config['pwd_age_notification'] = 7;
 $config['pwd_min_length'] = 8;
 
 /**
- * Required maximum length of passwords. To disable, set to FALSE
+ * Required maximum length of passwords. Set to 0 to disable
  */
-$config['pwd_max_length'] = FALSE;
+$config['pwd_max_length'] = 20;
 
 /**
  * Optional password complexity options. Set a number for each to
@@ -80,9 +80,9 @@ $config['pwd_complexity'] = array(
  * change them.
  */
 $config['pwd_complexity_chars'] = array(
-	'uppercase' => '[:upper:]',
-	'number' => '[:digit:]',
-	'special' => '[:punct:]'
+	'uppercase' => '[[:upper:]]',
+	'number' => '[[:digit:]]',
+	'special' => '[[:punct:]]'
 );
 
 /**
