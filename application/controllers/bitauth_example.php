@@ -24,7 +24,8 @@ class Bitauth_example extends CI_Controller
 			redirect('bitauth_example/login');
 		}
 
-		$this->load->view('bitauth/default');
+		$this->load->library('table');
+		$this->load->view('bitauth/default', array('bitauth' => $this->bitauth, 'users' => $this->bitauth->get_users()));
 	}
 
 	public function register()
@@ -33,10 +34,10 @@ class Bitauth_example extends CI_Controller
 
 		if($this->input->post())
 		{
-			$this->form_validation->set_rules('username', lang('bitauth_username'), 'trim|required|callback_bitauth_unique_username');
-			$this->form_validation->set_rules('email', lang('bitauth_email'), 'trim|required|valid_email');
-			$this->form_validation->set_rules('password', lang('bitauth_password'), 'required|callback_bitauth_valid_password');
-			$this->form_validation->set_rules('confirm_password', lang('bitauth_confirm_password'), 'required|matches[password]');
+			$this->form_validation->set_rules('username', 'Username', 'trim|required|bitauth_unique_username');
+			$this->form_validation->set_rules('email', 'Email', 'trim|required|valid_email');
+			$this->form_validation->set_rules('password', 'Password', 'required|bitauth_valid_password');
+			$this->form_validation->set_rules('confirm_password', 'Confirm Password', 'required|matches[password]');
 
 			if($this->form_validation->run() == TRUE)
 			{
@@ -70,13 +71,13 @@ class Bitauth_example extends CI_Controller
 
 		if($this->input->post())
 		{
-			$this->form_validation->set_rules('username', lang('bitauth_username'), 'trim|required');
-			$this->form_validation->set_rules('password', lang('bitauth_password'), 'required');
+			$this->form_validation->set_rules('username', 'Username', 'trim|required');
+			$this->form_validation->set_rules('password', 'Password', 'required');
 
 			if($this->form_validation->run() == TRUE)
 			{
 				// Login
-				if($this->bitauth->login($this->input->post('username'), $this->input->post('password')))
+				if($this->bitauth->login($this->input->post('username'), $this->input->post('password'), $this->input->post('remember_me')))
 				{
 					// Redirect
 					if($redir = $this->session->userdata('redir'))
@@ -104,36 +105,6 @@ class Bitauth_example extends CI_Controller
 	{
 		$this->bitauth->logout();
 		redirect('bitauth_example');
-	}
-
-	/**
-	 * My_Form_validation::bitauth_unique_username()
-	 *
-	 */
-	public function bitauth_unique_username($username)
-	{
-		if(! $this->bitauth->username_is_unique($username))
-		{
-			$this->form_validation->set_message('bitauth_unique_username', $this->bitauth->get_error());
-			return FALSE;
-		}
-
-		return TRUE;
-	}
-
-	/**
-	 * MY_Form_validation::bitauth_valid_password()
-	 *
-	 */
-	public function bitauth_valid_password($password)
-	{
-		if(! $this->bitauth->password_is_valid($password))
-		{
-			$this->form_validation->set_message('bitauth_valid_password', $this->bitauth->get_error());
-			return FALSE;
-		}
-
-		return TRUE;
 	}
 
 }

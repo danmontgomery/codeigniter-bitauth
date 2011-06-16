@@ -1,18 +1,9 @@
 <?php
 
 /**
- * Field Names
+ * This line is required, it must contain the label for your unique username field (what users login with)
  */
-$lang['bitauth_username']			= 'Username';
-$lang['bitauth_password']			= 'Password';
-$lang['bitauth_email']				= 'Email';
-$lang['bitauth_fullname']			= 'Full Name';
-$lang['bitauth_current_password']	= 'Current Password';
-$lang['bitauth_new_password']		= 'New Password';
-$lang['bitauth_confirm_password']	= 'Confirm Password';
-$lang['bitauth_reset_password']		= 'Reset Password';
-$lang['bitauth_login']				= 'Login';
-$lang['bitauth_register']			= 'Register';
+$lang['bitauth_username_field']		= 'Username';
 
 /**
  * Password Complexity Labels

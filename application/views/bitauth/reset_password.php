@@ -8,13 +8,13 @@
     <?php
 		echo form_open('bitauth/reset_password');
 
-		echo form_label(lang('bitauth_current_password'), 'current_password');
+		echo form_label('Current Password', 'current_password');
 		echo form_password('current_password', NULL, array('id' => 'current_password'));
-		echo form_label(lang('bitauth_new_password'), 'new_password');
+		echo form_label('New Password', 'new_password');
 		echo form_password('new_password', NULL, array('id' => 'new_password'));
-		echo form_label(lang('bitauth_confirm_password'), 'confirm_password');
+		echo form_label('Confirm New Password', 'confirm_password');
 		echo form_password('confirm_password', NULL, array('id' => 'confirm_password'));
-		echo form_submit(lang('bitauth_reset_password'));
+		echo form_submit('Reset Password');
 
 		echo validation_errors();
 

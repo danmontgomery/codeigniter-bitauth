@@ -73,7 +73,7 @@ class Bitauth extends CI_Model
 		{
 			$this->get_session_values();
 
-			if($this->_remember_token_updates)
+			if($this->input->cookie($this->_remember_token_name) && $this->_remember_token_updates)
 			{
 				$this->update_remember_token();
 			}
@@ -107,7 +107,7 @@ class Bitauth extends CI_Model
 		{
 			$user = $query->row();
 
-			if(sha1($password.$user->salt) === $user->password || ($password === NULL && $user->remember_me == $token))
+			if($this->hash_password($password, $user->salt) === $user->password || ($password === NULL && $user->remember_me == $token))
 			{
 				$this->set_session_values($user);
 
@@ -120,7 +120,7 @@ class Bitauth extends CI_Model
 			}
 		}
 
-		$this->set_error(sprintf(lang('bitauth_login_failed'), lang('bitauth_'.$this->_username_field)));
+		$this->set_error(sprintf(lang('bitauth_login_failed'), lang('bitauth_username_field')));
 		return FALSE;
 	}
 
@@ -201,7 +201,7 @@ class Bitauth extends CI_Model
 				continue;
 			}
 
-			$_key = substr($_key, 0, 8);
+			$_key = substr($_key, 8);
 
 			if(!isset($this->$_key))
 			{
@@ -210,7 +210,8 @@ class Bitauth extends CI_Model
 			else
 			{
 				log_message('error', $this->lang->line('bitauth_data_error').$_key);
-				show_error($this->lang->line('bitauth_data_error').$_key);
+				show_error($_key);
+				//show_error($this->lang->line('bitauth_data_error').$_key);
 			}
 		}
 	}
@@ -243,7 +244,7 @@ class Bitauth extends CI_Model
 
 		$pk = $this->_pk;
 		$this->db
-			->set('remember_me', $this->$user_id.'|'.$session_id)
+			->set('remember_me', $this->$user_id."\n".$session_id)
 			->where($this->_pk, $this->$pk)
 			->update($this->_table['users']);
 	}
@@ -258,7 +259,8 @@ class Bitauth extends CI_Model
 		{
 			$cookie = array(
 				'name' => $this->_remember_token_name,
-				'expire' => ''
+				'value' => '',
+				'expire' => -86400
 			);
 
 			$this->db
@@ -352,7 +354,7 @@ class Bitauth extends CI_Model
 			$check = gmp_init(0);
 			gmp_setbit($check, $index);
 
-			return gmp_strval(gmp_and($this->_permissions, $check)) === gmp_strval($check);
+			return gmp_strval(gmp_and($this->permissions, $check)) === gmp_strval($check);
 		}
 	}
 
@@ -436,15 +438,34 @@ class Bitauth extends CI_Model
 	}
 
 	/**
+	 * Bitauth::get_users()
+	 *
+	 */
+	 public function get_users()
+	 {
+		return $this->db->get($this->_table['users']);
+	 }
+
+	 /**
+	  * Bitauth::get_groups()
+	  *
+	  */
+	 public function get_groups()
+	 {
+		return $this->db->get($this->_table['groups']);
+	 }
+
+	/**
 	 * Bitauth::get_group_by_name()
 	 *
 	 */
 	public function get_group_by_name($group_name)
 	{
 		$_pk = $this->_pk;
+		$this->db->where('name', $group_name);
 
-		// @todo Make this case inensitive?
-		if($query = $this->db->where('name', $group_name)->get($this->_table['groups']))
+		$query = $this->get_groups();
+		if($query && $query->num_rows())
 		{
 			return $query->row()->$_pk;
 		}
@@ -509,7 +530,7 @@ class Bitauth extends CI_Model
 	 */
 	public function logged_in()
 	{
-		return (bool)$this->session->userdata($this->_username_field);
+		return (bool)$this->session->userdata('bitauth_'.$this->_username_field);
 	}
 
 	/**
@@ -522,7 +543,10 @@ class Bitauth extends CI_Model
 
 		foreach($this->_pwd_complexity as $_label => $_count)
 		{
-			$ret[] = lang('bitauth_pwd_'.$_label).': '.$_count;
+			if($_count > 0)
+			{
+				$ret[] = lang('bitauth_pwd_'.$_label).': '.$_count;
+			}
 		}
 
 		return implode('<br/>', $ret);

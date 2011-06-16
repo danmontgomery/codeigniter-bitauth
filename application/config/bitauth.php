@@ -56,7 +56,7 @@ $config['pwd_age_notification'] = 7;
 /**
  * Required minimum length of passwords
  */
-$config['pwd_min_length'] = 8;
+$config['pwd_min_length'] = 4;
 
 /**
  * Required maximum length of passwords. Set to 0 to disable
@@ -68,9 +68,9 @@ $config['pwd_max_length'] = 20;
  * require that many characters, or set to 0 to disable
  */
 $config['pwd_complexity'] = array(
-	'uppercase' => 1,
-	'number' => 1,
-	'special' => 1
+	'uppercase' => 0,
+	'number' => 0,
+	'special' => 0
 );
 
 /**
@@ -102,6 +102,5 @@ $config['permissions'] = array(
  * Follow the format:
  * 'permission_slug' => 'Permission Description',
  */
-	'example_perm_1' => 'Example Permission 1',
-	'example_perm_2' => 'Example Permission 2'
+	'can_edit' => 'Can Edit (Sample)'
 );

@@ -21,11 +21,11 @@
 
 		echo '<h2>BitAuth Example: Please Login</h2>';
 
-		echo form_label(lang('bitauth_username'), 'username');
+		echo form_label('Username', 'username');
 		echo form_input('username', set_value('username'), array('id' => 'username'));
-		echo form_label(lang('bitauth_password'), 'password');
+		echo form_label('Password', 'password');
 		echo form_password('password', NULL, array('id' => 'password'));
-		echo form_submit('login', lang('bitauth_login')).' or '.anchor('bitauth_example/register', lang('bitauth_register'));
+		echo form_submit('login', 'Login').' or '.anchor('bitauth_example/register', 'Register');
 
 		echo (!empty($error) ? $error : '' );
 
