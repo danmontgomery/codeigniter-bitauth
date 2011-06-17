@@ -312,11 +312,12 @@ class Bitauth extends CI_Model
 		$this->db->insert($this->_table['users'], $data);
 
 		$user_id = $this->db->insert_id();
-		$group_id = $this->get_group_by_name($this->_default_group);
+		$group = $this->get_group_by_name($this->_default_group);
 
-		if($group_id)
+		if($group)
 		{
-			$this->db->insert($this->_table['assoc'], array('user_id' => $user_id, 'group_id' => $group_id));
+			$_pk = $this->_pk;
+			$this->db->insert($this->_table['assoc'], array('user_id' => $user_id, 'group_id' => $group->$_pk));
 		}
 		else
 		{
@@ -446,6 +447,23 @@ class Bitauth extends CI_Model
 		return $this->db->get($this->_table['users']);
 	 }
 
+	/**
+	 * Bitauth::get_user_by_id()
+	 *
+	 */
+	public function get_user_by_id($id)
+	{
+		$this->db->where($this->_pk, $id);
+
+		$query = $this->get_users();
+		if($query && $query->num_rows())
+		{
+			return $query->row();
+		}
+
+		return FALSE;
+	}
+
 	 /**
 	  * Bitauth::get_groups()
 	  *
@@ -461,13 +479,12 @@ class Bitauth extends CI_Model
 	 */
 	public function get_group_by_name($group_name)
 	{
-		$_pk = $this->_pk;
 		$this->db->where('name', $group_name);
 
 		$query = $this->get_groups();
 		if($query && $query->num_rows())
 		{
-			return $query->row()->$_pk;
+			return $query->row();
 		}
 
 		return FALSE;

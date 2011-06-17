@@ -3,6 +3,10 @@
 class Bitauth_example extends CI_Controller
 {
 
+	/**
+	 * Bitauth_example::__construct()
+	 *
+	 */
 	public function __construct()
 	{
 		parent::__construct();
@@ -16,6 +20,10 @@ class Bitauth_example extends CI_Controller
 		$this->form_validation->set_error_delimiters('<div class="error">', '</div>');
 	}
 
+	/**
+	 * Bitauth_example::index()
+	 *
+	 */
 	public function index()
 	{
 		if(! $this->bitauth->logged_in())
@@ -25,9 +33,87 @@ class Bitauth_example extends CI_Controller
 		}
 
 		$this->load->library('table');
-		$this->load->view('bitauth/default', array('bitauth' => $this->bitauth, 'users' => $this->bitauth->get_users()));
+		$this->load->view('bitauth/users', array('bitauth' => $this->bitauth, 'users' => $this->bitauth->get_users()));
 	}
 
+	/**
+	 * Bitauth_example::groups()
+	 *
+	 */
+	public function groups()
+	{
+		if(! $this->bitauth->logged_in())
+		{
+			$this->session->set_userdata('redir', 'bitauth_example/groups');
+			redirect('bitauth_example/login');
+		}
+
+		$this->load->library('table');
+		$this->load->view('bitauth/groups', array('bitauth' => $this->bitauth, 'groups' => $this->bitauth->get_groups()));
+	}
+
+	/**
+	 * Bitauth_example::add_user
+	 *
+	 */
+	public function add_user()
+	{
+		if(! $this->bitauth->logged_in())
+		{
+			$this->session->set_userdata('redir', 'bitauth_example/add_user');
+			redirect('bitauth_example/login');
+		}
+
+		if(! $this->bitauth->has_perm('can_edit'))
+		{
+			$this->load->view('bitauth/no_access');
+			return;
+		}
+
+		$data = array('bitauth' => $this->bitauth);
+
+		if($this->input->post())
+		{
+
+			redirect('bitauth_example');
+		}
+
+		$this->load->view('bitauth/user_form', $data);
+	}
+
+	/**
+	 * Bitauth_example::edit_user
+	 *
+	 */
+	public function edit_user($user_id)
+	{
+		if(! $this->bitauth->logged_in())
+		{
+			$this->session->set_userdata('redir', 'bitauth_example/edit_user/'.$user_id);
+			redirect('bitauth_example/login');
+		}
+
+		if(! $this->bitauth->has_perm('can_edit'))
+		{
+			$this->load->view('bitauth/no_access');
+			return;
+		}
+
+		$data = array('bitauth' => $this->bitauth);
+
+		if($this->input->post())
+		{
+
+			redirect('bitauth_example');
+		}
+
+		$this->load->view('bitauth/user_form', $data);
+	}
+
+	/**
+	 * Bitauth_example::register()
+	 *
+	 */
 	public function register()
 	{
 		$data = array();
@@ -65,6 +151,10 @@ class Bitauth_example extends CI_Controller
 		$this->load->view('bitauth/register', $data);
 	}
 
+	/**
+	 * Bitauth_example::login()
+	 *
+	 */
 	public function login()
 	{
 		$data = array();
@@ -101,6 +191,10 @@ class Bitauth_example extends CI_Controller
 		$this->load->view('bitauth/login', $data);
 	}
 
+	/**
+	 * Bitauth_example::logout()
+	 *
+	 */
 	public function logout()
 	{
 		$this->bitauth->logout();
