@@ -7,10 +7,10 @@ class MY_Form_validation extends CI_Form_validation
 	 * My_Form_validation::bitauth_unique_username()
 	 *
 	 */
-	public function bitauth_unique_username($username)
+	public function bitauth_unique_username($username, $exclude_id = FALSE)
 	{
 		$CI = get_instance();
-		if(! $CI->bitauth->username_is_unique($username))
+		if(! $CI->bitauth->username_is_unique($username, $exclude_id))
 		{
 			$this->set_message('bitauth_unique_username', $CI->bitauth->get_error());
 			return FALSE;

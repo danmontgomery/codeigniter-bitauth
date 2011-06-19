@@ -74,8 +74,31 @@ class Bitauth_example extends CI_Controller
 
 		if($this->input->post())
 		{
+			$this->form_validation->set_rules('username', 'Username', 'trim|required|bitauth_unique_username');
+			$this->form_validation->set_rules('email', 'Email', 'trim|required|valid_email');
+			$this->form_validation->set_rules('fullname', 'Fullname', '');
+			$this->form_validation->set_rules('password', 'Password', 'required|bitauth_valid_password');
 
-			redirect('bitauth_example');
+			if($this->form_validation->run() == TRUE)
+			{
+				$user = array(
+					'username' => $this->input->post('username'),
+					'email' => $this->input->post('email'),
+					'fullname' => $this->input->post('fullname'),
+					'password' => $this->input->post('password')
+				);
+
+				if($this->bitauth->add_user($user))
+				{
+					redirect('bitauth_example');
+				}
+
+				$data['error'] = $this->bitauth->get_error();
+			}
+			else
+			{
+				$data['error'] = validation_errors();
+			}
 		}
 
 		$this->load->view('bitauth/user_form', $data);
@@ -99,12 +122,34 @@ class Bitauth_example extends CI_Controller
 			return;
 		}
 
-		$data = array('bitauth' => $this->bitauth);
+		$user = $this->bitauth->get_user_by_id($user_id);
+		$data = array('bitauth' => $this->bitauth, 'user' => $user);
 
 		if($this->input->post())
 		{
+			$this->form_validation->set_rules('username', 'Username', 'trim|required|bitauth_unique_username['.$user_id.']');
+			$this->form_validation->set_rules('email', 'Email', 'trim|required|valid_email');
+			$this->form_validation->set_rules('fullname', 'Fullname', '');
 
-			redirect('bitauth_example');
+			if($this->form_validation->run() == TRUE)
+			{
+				$user = array(
+					'username' => $this->input->post('username'),
+					'email' => $this->input->post('email'),
+					'fullname' => $this->input->post('fullname')
+				);
+
+				if($this->bitauth->update_user_info($user_id, $user))
+				{
+					redirect('bitauth_example');
+				}
+
+				$data['error'] = $this->bitauth->get_error();
+			}
+			else
+			{
+				$data['error'] = validation_errors();
+			}
 		}
 
 		$this->load->view('bitauth/user_form', $data);
@@ -122,6 +167,7 @@ class Bitauth_example extends CI_Controller
 		{
 			$this->form_validation->set_rules('username', 'Username', 'trim|required|bitauth_unique_username');
 			$this->form_validation->set_rules('email', 'Email', 'trim|required|valid_email');
+			$this->form_validation->set_rules('fullname', 'Fullname', '');
 			$this->form_validation->set_rules('password', 'Password', 'required|bitauth_valid_password');
 			$this->form_validation->set_rules('confirm_password', 'Confirm Password', 'required|matches[password]');
 
@@ -136,7 +182,6 @@ class Bitauth_example extends CI_Controller
 
 				if($this->bitauth->add_user($user))
 				{
-					// @todo success message
 					redirect('bitauth_example/login');
 				}
 

@@ -309,7 +309,13 @@ class Bitauth extends CI_Model
 		$data['password_last_set'] = date('Y-m-d H:i:s', time());
 
 		$this->db->trans_start();
-		$this->db->insert($this->_table['users'], $data);
+		if(! $this->db->insert($this->_table['users'], $data))
+		{
+			$this->set_error(lang('bitauth_add_user_failed'));
+			$this->db->trans_rollback();
+
+			return FALSE;
+		}
 
 		$user_id = $this->db->insert_id();
 		$group = $this->get_group_by_name($this->_default_group);
@@ -337,6 +343,49 @@ class Bitauth extends CI_Model
 
 		$this->db->trans_commit();
 		return TRUE;
+	}
+
+	/**
+	 * Bitauth::update_user()
+	 *
+	 */
+	public function update_user_info($id, $data)
+	{
+		if(! is_array($data) && ! is_object($data))
+		{
+			$this->set_error(lang('bitauth_edit_user_datatype'));
+			return FALSE;
+		}
+
+		$data = (array)$data;
+
+		if(empty($data[$this->_username_field]))
+		{
+			$this->set_error(sprintf(lang('bitauth_username_required'), $this->_username_field));
+			return FALSE;
+		}
+
+		// Just in case
+		if(! empty($data[$this->_pk]))
+		{
+			unset($data[$this->_pk]);
+		}
+
+		$this->db->trans_start();
+
+		$this->db->set($data)->where($this->_pk, $id)->update($this->_table['users']);
+
+		if($this->db->trans_status() === FALSE)
+		{
+			$this->set_error(lang('bitauth_edit_user_failed'));
+			$this->db->trans_rollback();
+
+			return FALSE;
+		}
+
+		$this->db->trans_commit();
+		return TRUE;
+
 	}
 
 	/**

@@ -24,13 +24,21 @@
 		echo '<h2>BitAuth Example: '.( isset($user) ? 'Edit' : 'Add' ).' User</h2>';
 
 		echo form_label('Username', 'username');
-		echo form_input('username', set_value('username', (isset($user) ? $user->username : '')), array('id' => 'username'));
+		echo form_input('username', set_value('username', (isset($user) ? $user->username : '')));
 		echo form_label('Email', 'email');
-		echo form_input('email', set_value('email', (isset($user) ? $user->email : '')), array('id' => 'email'));
+		echo form_input('email', set_value('email', (isset($user) ? $user->email : '')));
 		echo form_label('Full Name', 'fullname');
-		echo form_input('fullname', set_value('fullname', (isset($user) ? $user->fullname : '')), array('id' => 'fullname'));
-		echo form_label('Password', 'password');
-		echo form_password('password', NULL, array('id' => 'password'));
+		echo form_input('fullname', set_value('fullname', (isset($user) ? $user->fullname : '')));
+
+		if(!isset($user))
+		{
+			echo form_label('Password', 'password');
+			echo form_password('password', NULL, array('id' => 'password'));
+		}
+
+		echo form_submit('submit', ( isset($user) ? 'Save Changes' : 'Add User' )).' or '.anchor('bitauth_example', 'Cancel');
+
+		echo (!empty($error) ? $error : '' );
 
 		echo form_close();
 		echo '<p class="creds">

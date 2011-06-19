@@ -36,4 +36,6 @@ $lang['bitauth_data_error']			= 'You can\'t overwrite default BitAuth properties
 $lang['bitauth_enable_gmp']			= 'You must enable php_gmp to use Bitauth.';
 $lang['bitauth_add_user_datatype']	= '$data must be an array or an object in Bitauth::add_user';
 $lang['bitauth_add_user_failed']	= 'Adding user failed, please notify an administrator.';
+$lang['bitauth_edit_user_datatype']	= '$data must be an array or an object in Bitauth::update_user_info';
+$lang['bitauth_edit_user_failed']	= 'Updating user failed, please notify an administrator.';
 $lang['bitauth_no_default_group']	= 'Default group was either not specified or not found, please notify an administrator.';
