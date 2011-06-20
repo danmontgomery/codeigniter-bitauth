@@ -12,11 +12,6 @@
 		td { padding: 6px 0; }
 		tbody tr:nth-child(odd) { background-color: #F2F2F2; }
 		form { width: 500px; margin: 0 auto 10px auto; padding: 18px; border: 1px solid #262626; }
-		label, input { margin: 0; }
-		label { display: block; font-weight: bold; }
-		input { margin-bottom: 12px; }
-		input[type=text], input[type=password] { width: 100%; display: block; }
-		.error { font-weight: bold; color: #F00; }
 		.logininfo { width: 500px; margin: 7% auto 0 auto; }
 		.creds { width: 600px; margin: 0 auto; padding: 0; }
 	</style>

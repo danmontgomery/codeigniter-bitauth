@@ -20,6 +20,22 @@ class MY_Form_validation extends CI_Form_validation
 	}
 
 	/**
+	 * My_Form_validation::bitauth_unique_group()
+	 *
+	 */
+	public function bitauth_unique_group($group_name, $exclude_id = FALSE)
+	{
+		$CI = get_instance();
+		if(! $CI->bitauth->group_is_unique($group_name, $exclude_id))
+		{
+			$this->set_message('bitauth_unique_group', $CI->bitauth->get_error());
+			return FALSE;
+		}
+
+		return TRUE;
+	}
+
+	/**
 	 * MY_Form_validation::bitauth_valid_password()
 	 *
 	 */

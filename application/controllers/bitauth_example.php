@@ -37,22 +37,6 @@ class Bitauth_example extends CI_Controller
 	}
 
 	/**
-	 * Bitauth_example::groups()
-	 *
-	 */
-	public function groups()
-	{
-		if(! $this->bitauth->logged_in())
-		{
-			$this->session->set_userdata('redir', 'bitauth_example/groups');
-			redirect('bitauth_example/login');
-		}
-
-		$this->load->library('table');
-		$this->load->view('bitauth/groups', array('bitauth' => $this->bitauth, 'groups' => $this->bitauth->get_groups()));
-	}
-
-	/**
 	 * Bitauth_example::add_user
 	 *
 	 */
@@ -153,6 +137,81 @@ class Bitauth_example extends CI_Controller
 		}
 
 		$this->load->view('bitauth/user_form', $data);
+	}
+
+	/**
+	 * Bitauth_example::groups()
+	 *
+	 */
+	public function groups()
+	{
+		if(! $this->bitauth->logged_in())
+		{
+			$this->session->set_userdata('redir', 'bitauth_example/groups');
+			redirect('bitauth_example/login');
+		}
+
+		$this->load->library('table');
+		$this->load->view('bitauth/groups', array('bitauth' => $this->bitauth, 'groups' => $this->bitauth->get_groups()));
+	}
+
+	/**
+	 * Bitauth_example::add_group()
+	 *
+	 */
+	public function add_group()
+	{
+		if(! $this->bitauth->logged_in())
+		{
+			$this->session->set_userdata('redir', 'bitauth_example/add_group');
+			redirect('bitauth_example/login');
+		}
+
+		if(! $this->bitauth->has_perm('can_edit'))
+		{
+			$this->load->view('bitauth/no_access');
+			return;
+		}
+
+		$data = array('bitauth' => $this->bitauth);
+
+		if($this->input->post())
+		{
+			$this->form_validation->set_rules('name', 'Name', 'trim|required|bitauth_unique_group');
+			$this->form_validation->set_rules('description', 'Description', '');
+
+			if($this->form_validation->run() == TRUE)
+			{
+				$user = array(
+					'username' => $this->input->post('username'),
+					'email' => $this->input->post('email'),
+					'fullname' => $this->input->post('fullname'),
+					'password' => $this->input->post('password')
+				);
+
+				if($this->bitauth->add_user($user))
+				{
+					redirect('bitauth_example');
+				}
+
+				$data['error'] = $this->bitauth->get_error();
+			}
+			else
+			{
+				$data['error'] = validation_errors();
+			}
+		}
+
+		$this->load->view('bitauth/user_form', $data);
+	}
+
+	/**
+	 * Bitauth_example::edit_group()
+	 *
+	 */
+	public function edit_group()
+	{
+
 	}
 
 	/**
