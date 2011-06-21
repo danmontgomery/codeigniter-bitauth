@@ -18,7 +18,7 @@ $lang['bitauth_pwd_special']		= 'Special Characters';
 $lang['bitauth_login_failed']		= 'Invalid %s or Password';
 
 /**
- * Registration Error Messages
+ * User Error Messages
  */
 $lang['bitauth_unique_username']	= 'The %s field must be unique.';
 $lang['bitauth_password_is_valid']	= '%s does not meet the complexity requirements: ';
@@ -28,6 +28,11 @@ $lang['bitauth_passwd_complexity']	= 'Password does not meet complexity requirem
 $lang['bitauth_passwd_min_length']	= 'Password must be at least %d characters.';
 $lang['bitauth_passwd_max_length']	= 'Password may not be longer than %d characters.';
 
+/**
+ * Group Error Messages
+ */
+$lang['bitauth_unique_group']		= 'The %s field must be unique.';
+$lang['bitauth_groupname_required']	= 'Group name is required.';
 
 /**
  * General Error Messages
@@ -39,3 +44,7 @@ $lang['bitauth_add_user_failed']	= 'Adding user failed, please notify an adminis
 $lang['bitauth_edit_user_datatype']	= '$data must be an array or an object in Bitauth::update_user_info';
 $lang['bitauth_edit_user_failed']	= 'Updating user failed, please notify an administrator.';
 $lang['bitauth_no_default_group']	= 'Default group was either not specified or not found, please notify an administrator.';
+$lang['bitauth_add_group_datatype']	= '$data must be an array or an object in Bitauth::add_group';
+$lang['bitauth_add_group_failed']	= 'Adding group failed, please notify an administrator.';
+$lang['bitauth_edit_group_datatype']= '$data must be an array or an object in Bitauth::update_group';
+$lang['bitauth_edit_group_failed']	= 'Updating group failed, please notify an administrator.';

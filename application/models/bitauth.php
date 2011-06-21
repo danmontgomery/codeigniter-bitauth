@@ -346,6 +346,45 @@ class Bitauth extends CI_Model
 	}
 
 	/**
+	 * Bitauth::add_group()
+	 *
+	 */
+	public function add_group($data)
+	{
+		if(! is_array($data) && ! is_object($data))
+		{
+			$this->set_error(lang('bitauth_add_group_datatype'));
+			return FALSE;
+		}
+
+		$data = (array)$data;
+
+		if(empty($data['name']))
+		{
+			$this->set_error(lang('bitauth_groupname_required'));
+			return FALSE;
+		}
+
+		// Just in case
+		if(! empty($data[$this->_pk]))
+		{
+			unset($data[$this->_pk]);
+		}
+
+		$this->db->trans_start();
+		if(! $this->db->insert($this->_table['groups'], $data))
+		{
+			$this->set_error(lang('bitauth_add_group_failed'));
+			$this->db->trans_rollback();
+
+			return FALSE;
+		}
+
+		$this->db->trans_commit();
+		return TRUE;
+	}
+
+	/**
 	 * Bitauth::update_user()
 	 *
 	 */
@@ -388,12 +427,65 @@ class Bitauth extends CI_Model
 
 	}
 
+		/**
+	 * Bitauth::update_group()
+	 *
+	 */
+	public function update_group($id, $data)
+	{
+		if(! is_array($data) && ! is_object($data))
+		{
+			$this->set_error(lang('bitauth_edit_group_datatype'));
+			return FALSE;
+		}
+
+		$data = (array)$data;
+
+		if(empty($data['name']))
+		{
+			$this->set_error(lang('bitauth_groupname_required'));
+			return FALSE;
+		}
+
+		// Just in case
+		if(! empty($data[$this->_pk]))
+		{
+			unset($data[$this->_pk]);
+		}
+
+		$this->db->trans_start();
+
+		$this->db->set($data)->where($this->_pk, $id)->update($this->_table['groups']);
+
+		if($this->db->trans_status() === FALSE)
+		{
+			$this->set_error(lang('bitauth_edit_group_failed'));
+			$this->db->trans_rollback();
+
+			return FALSE;
+		}
+
+		$this->db->trans_commit();
+		return TRUE;
+
+	}
+
 	/**
 	 * Bitauth::has_perm()
 	 *
 	 */
-	public function has_perm($slug)
+	public function has_perm($slug, $mask = NULL)
 	{
+		if($mask === NULL)
+		{
+			$mask = $this->permissions;
+		}
+
+		if($mask == 0)
+		{
+			return FALSE;
+		}
+
 		if(($index = array_search($slug, array_keys($this->_all_permissions))) !== FALSE)
 		{
 			if($slug != $this->_admin_permission && $this->has_perm($this->_admin_permission))
@@ -404,8 +496,17 @@ class Bitauth extends CI_Model
 			$check = gmp_init(0);
 			gmp_setbit($check, $index);
 
-			return gmp_strval(gmp_and($this->permissions, $check)) === gmp_strval($check);
+			return gmp_strval(gmp_and($mask, $check)) === gmp_strval($check);
 		}
+	}
+
+	/**
+	 * Bitauth::get_all_permissions()
+	 *
+	 */
+	public function get_all_permissions()
+	{
+		return $this->_all_permissions;
 	}
 
 	/**
@@ -419,10 +520,31 @@ class Bitauth extends CI_Model
 			$this->db->where($this->_pk.' !=', (int)$exclude_user);
 		}
 
-		$query = $this->db->where($this->_username_field, $username)->get($this->_table['users']);
+		$query = $this->db->where('LOWER(`'.$this->_username_field.'`)', strtolower($username))->get($this->_table['users']);
 		if($query && $query->num_rows())
 		{
 			$this->set_error(lang('bitauth_unique_username'));
+			return FALSE;
+		}
+
+		return TRUE;
+	}
+
+	/**
+	 * Bitauth::group_is_unique()
+	 *
+	 */
+	public function group_is_unique($group_name, $exclude_group = FALSE)
+	{
+		if($exclude_group != FALSE)
+		{
+			$this->db->where($this->_pk.' !=', (int)$exclude_group);
+		}
+
+		$query = $this->db->where('LOWER(`name`)', strtolower($group_name))->get($this->_table['groups']);
+		if($query && $query->num_rows())
+		{
+			$this->set_error(lang('bitauth_unique_group'));
 			return FALSE;
 		}
 
@@ -529,6 +651,23 @@ class Bitauth extends CI_Model
 	public function get_group_by_name($group_name)
 	{
 		$this->db->where('name', $group_name);
+
+		$query = $this->get_groups();
+		if($query && $query->num_rows())
+		{
+			return $query->row();
+		}
+
+		return FALSE;
+	}
+
+	/**
+	 * Bitauth::get_group_by_id()
+	 *
+	 */
+	public function get_group_by_id($id)
+	{
+		$this->db->where($this->_pk, $id);
 
 		$query = $this->get_groups();
 		if($query && $query->num_rows())
