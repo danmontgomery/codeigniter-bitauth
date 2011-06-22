@@ -9,7 +9,7 @@
 		h2 { margin: 0 0 8px 0; }
 		table { width: 100%; border-bottom: 1px solid #BBB; }
 		th { text-align: left; border-bottom: 1px solid #BBB; padding: 0; }
-		td { padding: 6px 0; }
+		td { padding: 6px 0; vertical-align: top; }
 		tbody tr:nth-child(odd) { background-color: #F2F2F2; }
 		form { width: 500px; margin: 0 auto 10px auto; padding: 18px; border: 1px solid #262626; }
 		.logininfo { width: 500px; margin: 7% auto 0 auto; }
@@ -27,10 +27,13 @@
 
 		foreach($users->result() as $_user)
 		{
+			$actions = anchor('bitauth_example/edit_user/'.$_user->user_id, ( $bitauth->has_perm('can_edit') ? 'Edit' : 'View' )).'<br/>'
+				.( $bitauth->has_perm('can_change_pw') ? anchor('bitauth_example/reset_password/'.$_user->user_id, 'Reset Password') : '' );
+
 			$this->table->add_row(array(
 				array('width' => '45%', 'data' => $_user->fullname),
 				array('data' => $_user->username),
-				array('width' => 1, 'data' => anchor('bitauth_example/edit_user/'.$_user->id, ( $bitauth->has_perm('can_edit') ? 'Edit' : 'View' )))
+				array('width' => '20%', 'style' => 'text-align: right;', 'data' => $actions)
 			));
 		}
 

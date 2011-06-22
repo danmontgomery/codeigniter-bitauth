@@ -34,7 +34,7 @@
 		{
 			$this->table->add_row(array(
 				array('data' => $_group->name),
-				array('width' => 1, 'data' => anchor('bitauth_example/edit_group/'.$_group->id, ( $bitauth->has_perm('can_edit') ? 'Edit' : 'View' )))
+				array('width' => 1, 'data' => anchor('bitauth_example/edit_group/'.$_group->group_id, ( $bitauth->has_perm('can_edit') ? 'Edit' : 'View' )))
 			));
 		}
 

@@ -1,4 +1,4 @@
-<?php  if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+<?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
 /**
  * Tables used by BitAuth
@@ -13,11 +13,6 @@ $config['table'] = array(
  * Field users log in with, must be unique
  */
 $config['username_field'] = 'username';
-
-/**
- * Primary key for all BitAuth tables
- */
-$config['primary_key'] = 'id';
 
 /**
  * Default group users are added to when they first register
@@ -95,12 +90,13 @@ $config['permissions'] = array(
  * THE FIRST PERMISSION IS ALWAYS THE ADMINISTRATOR PERMISSION
  * ANY GROUPS GIVEN THIS PERMISSION WILL HAVE FULL ACCESS
  */
-	'is_admin' => 'User is an Administrator',
+	'is_admin'		=> 'User is an Administrator',
 
 /**
  * Add as many permissions slugs here as you like.
  * Follow the format:
  * 'permission_slug' => 'Permission Description',
  */
-	'can_edit' => 'Can Edit (Sample)'
+	'can_edit'		=> 'Can Add/Edit Users & Groups(Sample)',
+	'can_change_pw'	=> 'Can Change User Passwords (Sample)'
 );

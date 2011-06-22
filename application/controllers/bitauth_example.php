@@ -18,6 +18,8 @@ class Bitauth_example extends CI_Controller
 
 		$this->load->library('form_validation');
 		$this->form_validation->set_error_delimiters('<div class="error">', '</div>');
+
+		$this->output->enable_profiler();
 	}
 
 	/**
@@ -54,7 +56,7 @@ class Bitauth_example extends CI_Controller
 			return;
 		}
 
-		$data = array('bitauth' => $this->bitauth);
+		$data = array('bitauth' => $this->bitauth, 'edit' => TRUE);
 
 		if($this->input->post())
 		{
@@ -94,20 +96,14 @@ class Bitauth_example extends CI_Controller
 	 */
 	public function edit_user($user_id)
 	{
-		if(! $this->bitauth->logged_in())
+		if( ! $this->bitauth->logged_in())
 		{
 			$this->session->set_userdata('redir', 'bitauth_example/edit_user/'.$user_id);
 			redirect('bitauth_example/login');
 		}
 
-		if(! $this->bitauth->has_perm('can_edit'))
-		{
-			$this->load->view('bitauth/no_access');
-			return;
-		}
-
 		$user = $this->bitauth->get_user_by_id($user_id);
-		$data = array('bitauth' => $this->bitauth, 'user' => $user);
+		$data = array('bitauth' => $this->bitauth, 'user' => $user, 'edit' => (bool)$this->bitauth->has_perm('can_edit'));
 
 		if($this->input->post())
 		{
@@ -176,7 +172,7 @@ class Bitauth_example extends CI_Controller
 			return;
 		}
 
-		$data = array('bitauth' => $this->bitauth);
+		$data = array('bitauth' => $this->bitauth, 'edit' => TRUE);
 
 		if($this->input->post())
 		{
@@ -228,14 +224,8 @@ class Bitauth_example extends CI_Controller
 			redirect('bitauth_example/login');
 		}
 
-		if(! $this->bitauth->has_perm('can_edit'))
-		{
-			$this->load->view('bitauth/no_access');
-			return;
-		}
-
 		$group = $this->bitauth->get_group_by_id($group_id);
-		$data = array('bitauth' => $this->bitauth, 'group' => $group);
+		$data = array('bitauth' => $this->bitauth, 'group' => $group, 'edit' => (bool)$this->bitauth->has_perm('can_edit'));
 
 		if($this->input->post())
 		{
@@ -273,6 +263,16 @@ class Bitauth_example extends CI_Controller
 		}
 
 		$this->load->view('bitauth/group_form', $data);
+	}
+
+	/**
+	 * Bitauth_example::reset_password()
+	 *
+	 */
+	public function reset_password()
+	{
+		$data = array('bitauth' => $this->bitauth);
+		$this->load->view('bitauth/reset_password', $data);
 	}
 
 	/**

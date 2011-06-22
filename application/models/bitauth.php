@@ -1,4 +1,4 @@
-<?php  if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+<?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
 /**
  * BitAuth
@@ -12,7 +12,6 @@ class Bitauth extends CI_Model
 {
 
 	public $_table;
-	public $_pk;
 	public $_username_field;
 	public $_default_group;
 	public $_admin_permission;
@@ -37,7 +36,7 @@ class Bitauth extends CI_Model
 
 		$this->lang->load('bitauth');
 
-		if(!function_exists('gmp_init'))
+		if( ! function_exists('gmp_init'))
 		{
 			log_message('error', $this->lang->line('bitauth_enable_gmp'));
 			show_error($this->lang->line('bitauth_enable_gmp'));
@@ -48,7 +47,6 @@ class Bitauth extends CI_Model
 		$this->load->config('bitauth', TRUE);
 
 		$this->_table					= $this->config->item('table', 'bitauth');
-		$this->_pk						= $this->config->item('primary_key', 'bitauth');
 		$this->_username_field			= $this->config->item('username_field', 'bitauth');
 		$this->_default_group			= $this->config->item('default_group', 'bitauth');
 		$this->_remember_token_name		= $this->config->item('remember_token_name', 'bitauth');
@@ -96,10 +94,10 @@ class Bitauth extends CI_Model
 		$query = $this->db
 			->select($this->_table['users'].'.*')
 			->select('BIT_OR('.$this->_table['groups'].'.permissions) AS permissions', FALSE)
-			->join($this->_table['assoc'], $this->_table['assoc'].'.user_id = '.$this->_table['users'].'.'.$this->_pk, 'left')
-			->join($this->_table['groups'], $this->_table['groups'].'.'.$this->_pk.' = '.$this->_table['assoc'].'.group_id', 'left')
+			->join($this->_table['assoc'], $this->_table['assoc'].'.user_id = '.$this->_table['users'].'.user_id', 'left')
+			->join($this->_table['groups'], $this->_table['groups'].'.group_id = '.$this->_table['assoc'].'.group_id', 'left')
 			->where($this->_table['users'].'.'.$this->_username_field, $username)
-			->group_by($this->_table['users'].'.'.$this->_pk)
+			->group_by($this->_table['users'].'.user_id')
 			->limit(1)
 			->get($this->_table['users']);
 
@@ -203,7 +201,7 @@ class Bitauth extends CI_Model
 
 			$_key = substr($_key, 8);
 
-			if(!isset($this->$_key))
+			if( ! isset($this->$_key))
 			{
 				$this->$_key = $_value;
 			}
@@ -222,7 +220,7 @@ class Bitauth extends CI_Model
 	 */
 	public function update_remember_token()
 	{
-		if(!$this->logged_in())
+		if( ! $this->logged_in())
 		{
 			return;
 		}
@@ -242,10 +240,9 @@ class Bitauth extends CI_Model
 
 		$this->input->set_cookie($cookie);
 
-		$pk = $this->_pk;
 		$this->db
 			->set('remember_me', $this->$user_id."\n".$session_id)
-			->where($this->_pk, $this->$pk)
+			->where('user_id', $this->user_id)
 			->update($this->_table['users']);
 	}
 
@@ -278,7 +275,7 @@ class Bitauth extends CI_Model
 	 */
 	public function add_user($data)
 	{
-		if(! is_array($data) && ! is_object($data))
+		if( ! is_array($data) && ! is_object($data))
 		{
 			$this->set_error(lang('bitauth_add_user_datatype'));
 			return FALSE;
@@ -299,9 +296,9 @@ class Bitauth extends CI_Model
 		}
 
 		// Just in case
-		if(! empty($data[$this->_pk]))
+		if( ! empty($data['user_id']))
 		{
-			unset($data[$this->_pk]);
+			unset($data['user_id']);
 		}
 
 		$data['salt'] = $this->salt();
@@ -309,7 +306,7 @@ class Bitauth extends CI_Model
 		$data['password_last_set'] = date('Y-m-d H:i:s', time());
 
 		$this->db->trans_start();
-		if(! $this->db->insert($this->_table['users'], $data))
+		if( ! $this->db->insert($this->_table['users'], $data))
 		{
 			$this->set_error(lang('bitauth_add_user_failed'));
 			$this->db->trans_rollback();
@@ -322,8 +319,7 @@ class Bitauth extends CI_Model
 
 		if($group)
 		{
-			$_pk = $this->_pk;
-			$this->db->insert($this->_table['assoc'], array('user_id' => $user_id, 'group_id' => $group->$_pk));
+			$this->db->insert($this->_table['assoc'], array('user_id' => $user_id, 'group_id' => $group->group_id));
 		}
 		else
 		{
@@ -351,7 +347,7 @@ class Bitauth extends CI_Model
 	 */
 	public function add_group($data)
 	{
-		if(! is_array($data) && ! is_object($data))
+		if( ! is_array($data) && ! is_object($data))
 		{
 			$this->set_error(lang('bitauth_add_group_datatype'));
 			return FALSE;
@@ -366,13 +362,13 @@ class Bitauth extends CI_Model
 		}
 
 		// Just in case
-		if(! empty($data[$this->_pk]))
+		if( ! empty($data['group_id']))
 		{
-			unset($data[$this->_pk]);
+			unset($data['group_id']);
 		}
 
 		$this->db->trans_start();
-		if(! $this->db->insert($this->_table['groups'], $data))
+		if( ! $this->db->insert($this->_table['groups'], $data))
 		{
 			$this->set_error(lang('bitauth_add_group_failed'));
 			$this->db->trans_rollback();
@@ -390,7 +386,7 @@ class Bitauth extends CI_Model
 	 */
 	public function update_user_info($id, $data)
 	{
-		if(! is_array($data) && ! is_object($data))
+		if( ! is_array($data) && ! is_object($data))
 		{
 			$this->set_error(lang('bitauth_edit_user_datatype'));
 			return FALSE;
@@ -405,14 +401,14 @@ class Bitauth extends CI_Model
 		}
 
 		// Just in case
-		if(! empty($data[$this->_pk]))
+		if( ! empty($data['user_id']))
 		{
-			unset($data[$this->_pk]);
+			unset($data['user_id']);
 		}
 
 		$this->db->trans_start();
 
-		$this->db->set($data)->where($this->_pk, $id)->update($this->_table['users']);
+		$this->db->set($data)->where('user_id', $id)->update($this->_table['users']);
 
 		if($this->db->trans_status() === FALSE)
 		{
@@ -433,7 +429,7 @@ class Bitauth extends CI_Model
 	 */
 	public function update_group($id, $data)
 	{
-		if(! is_array($data) && ! is_object($data))
+		if( ! is_array($data) && ! is_object($data))
 		{
 			$this->set_error(lang('bitauth_edit_group_datatype'));
 			return FALSE;
@@ -448,14 +444,14 @@ class Bitauth extends CI_Model
 		}
 
 		// Just in case
-		if(! empty($data[$this->_pk]))
+		if( ! empty($data['group_id']))
 		{
-			unset($data[$this->_pk]);
+			unset($data['group_id']);
 		}
 
 		$this->db->trans_start();
 
-		$this->db->set($data)->where($this->_pk, $id)->update($this->_table['groups']);
+		$this->db->set($data)->where('group_id', $id)->update($this->_table['groups']);
 
 		if($this->db->trans_status() === FALSE)
 		{
@@ -488,7 +484,7 @@ class Bitauth extends CI_Model
 
 		if(($index = array_search($slug, array_keys($this->_all_permissions))) !== FALSE)
 		{
-			if($slug != $this->_admin_permission && $this->has_perm($this->_admin_permission))
+			if($slug != $this->_admin_permission && $this->has_perm($this->_admin_permission, $mask))
 			{
 				return TRUE;
 			}
@@ -517,7 +513,7 @@ class Bitauth extends CI_Model
 	{
 		if($exclude_user != FALSE)
 		{
-			$this->db->where($this->_pk.' !=', (int)$exclude_user);
+			$this->db->where('user_id !=', (int)$exclude_user);
 		}
 
 		$query = $this->db->where('LOWER(`'.$this->_username_field.'`)', strtolower($username))->get($this->_table['users']);
@@ -538,7 +534,7 @@ class Bitauth extends CI_Model
 	{
 		if($exclude_group != FALSE)
 		{
-			$this->db->where($this->_pk.' !=', (int)$exclude_group);
+			$this->db->where('group_id !=', (int)$exclude_group);
 		}
 
 		$query = $this->db->where('LOWER(`name`)', strtolower($group_name))->get($this->_table['groups']);
@@ -615,7 +611,11 @@ class Bitauth extends CI_Model
 	 */
 	 public function get_users()
 	 {
-		return $this->db->get($this->_table['users']);
+		return $this->db
+			->select('users.*, GROUP_CONCAT(assoc.group_id) AS groups')
+			->join($this->_table['assoc'].' assoc', 'assoc.user_id = users.user_id', 'left')
+			->group_by('users.user_id')
+			->get($this->_table['users'].' users');
 	 }
 
 	/**
@@ -624,7 +624,7 @@ class Bitauth extends CI_Model
 	 */
 	public function get_user_by_id($id)
 	{
-		$this->db->where($this->_pk, $id);
+		$this->db->where('users.user_id', $id);
 
 		$query = $this->get_users();
 		if($query && $query->num_rows())
@@ -641,7 +641,11 @@ class Bitauth extends CI_Model
 	  */
 	 public function get_groups()
 	 {
-		return $this->db->get($this->_table['groups']);
+		return $this->db
+			->select('groups.*, GROUP_CONCAT(assoc.user_id) AS members')
+			->join($this->_table['assoc'].' assoc', 'assoc.group_id = groups.group_id', 'left')
+			->group_by('groups.group_id')
+			->get($this->_table['groups'].' groups');
 	 }
 
 	/**
@@ -650,7 +654,7 @@ class Bitauth extends CI_Model
 	 */
 	public function get_group_by_name($group_name)
 	{
-		$this->db->where('name', $group_name);
+		$this->db->where('groups.name', $group_name);
 
 		$query = $this->get_groups();
 		if($query && $query->num_rows())
@@ -667,7 +671,7 @@ class Bitauth extends CI_Model
 	 */
 	public function get_group_by_id($id)
 	{
-		$this->db->where($this->_pk, $id);
+		$this->db->where('groups.group_id', $id);
 
 		$query = $this->get_groups();
 		if($query && $query->num_rows())

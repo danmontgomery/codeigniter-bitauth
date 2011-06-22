@@ -33,7 +33,7 @@
 
 		echo form_submit('register', 'Register').' or '.anchor('bitauth_example/login', 'Login');;
 
-		echo (!empty($error) ? $error : '' );
+		echo ( ! empty($error) ? $error : '' );
 
 		echo form_close();
 	?>

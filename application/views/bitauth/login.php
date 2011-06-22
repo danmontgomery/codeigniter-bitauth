@@ -27,7 +27,7 @@
 		echo form_password('password', NULL, array('id' => 'password'));
 		echo form_submit('login', 'Login').' or '.anchor('bitauth_example/register', 'Register');
 
-		echo (!empty($error) ? $error : '' );
+		echo ( ! empty($error) ? $error : '' );
 
 		echo form_close();
 		echo '<div class="creds"><strong>Admin Login:</strong> admin/admin</div>';
