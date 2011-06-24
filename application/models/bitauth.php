@@ -91,20 +91,10 @@ class Bitauth extends CI_Model
 	 */
 	public function login($username, $password, $remember = FALSE, $token = NULL)
 	{
-		$query = $this->db
-			->select($this->_table['users'].'.*')
-			->select('BIT_OR('.$this->_table['groups'].'.permissions) AS permissions', FALSE)
-			->join($this->_table['assoc'], $this->_table['assoc'].'.user_id = '.$this->_table['users'].'.user_id', 'left')
-			->join($this->_table['groups'], $this->_table['groups'].'.group_id = '.$this->_table['assoc'].'.group_id', 'left')
-			->where($this->_table['users'].'.'.$this->_username_field, $username)
-			->group_by($this->_table['users'].'.user_id')
-			->limit(1)
-			->get($this->_table['users']);
+		$user = $this->get_user_by_username($username);
 
-		if($query !== FALSE && $query->num_rows())
+		if($user !== FALSE)
 		{
-			$user = $query->row();
-
 			if($this->hash_password($password, $user->salt) === $user->password || ($password === NULL && $user->remember_me == $token))
 			{
 				$this->set_session_values($user);
@@ -449,6 +439,17 @@ class Bitauth extends CI_Model
 			unset($data['group_id']);
 		}
 
+		$permissions = gmp_init(0);
+		if(is_array($data['permissions']))
+		{
+			foreach($data['permissions'] as $_perm => $on)
+			{
+				gmp_setbit($permissions, $_perm);
+			}
+		}
+
+		$data['permissions'] = gmp_strval($permissions);
+
 		$this->db->trans_start();
 
 		$this->db->set($data)->where('group_id', $id)->update($this->_table['groups']);
@@ -612,11 +613,31 @@ class Bitauth extends CI_Model
 	 public function get_users()
 	 {
 		return $this->db
-			->select('users.*, GROUP_CONCAT(assoc.group_id) AS groups')
+			->select('users.*')
+			->select('GROUP_CONCAT(assoc.group_id) AS groups')
+			->select('BIT_OR(groups.permissions) AS permissions')
 			->join($this->_table['assoc'].' assoc', 'assoc.user_id = users.user_id', 'left')
+			->join($this->_table['groups'].' groups', 'groups.group_id = assoc.group_id', 'left')
 			->group_by('users.user_id')
 			->get($this->_table['users'].' users');
 	 }
+
+	/**
+	 * Bitauth::get_user_by_username()
+	 *
+	 */
+	public function get_user_by_username($username)
+	{
+		$this->db->where('users.'.$this->_username_field, $username);
+
+		$query = $this->get_users();
+		if($query && $query->num_rows())
+		{
+			return $query->row();
+		}
+
+		return FALSE;
+	}
 
 	/**
 	 * Bitauth::get_user_by_id()

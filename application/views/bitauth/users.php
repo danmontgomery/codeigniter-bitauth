@@ -27,8 +27,12 @@
 
 		foreach($users->result() as $_user)
 		{
-			$actions = anchor('bitauth_example/edit_user/'.$_user->user_id, ( $bitauth->has_perm('can_edit') ? 'Edit' : 'View' )).'<br/>'
-				.( $bitauth->has_perm('can_change_pw') ? anchor('bitauth_example/reset_password/'.$_user->user_id, 'Reset Password') : '' );
+			$actions = anchor('bitauth_example/edit_user/'.$_user->user_id, ( $bitauth->has_perm('can_edit') ? 'Edit' : 'View' )).'<br/>&nbsp;';
+
+			if($bitauth->has_perm('can_change_pw') && ($bitauth->has_perm('is_admin') || ! $bitauth->has_perm('is_admin', $_user->permissions)))
+			{
+				$actions .= anchor('bitauth_example/reset_password/'.$_user->user_id, 'Reset Password');
+			}
 
 			$this->table->add_row(array(
 				array('width' => '45%', 'data' => $_user->fullname),

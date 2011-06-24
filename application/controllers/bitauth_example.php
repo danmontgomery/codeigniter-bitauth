@@ -235,18 +235,10 @@ class Bitauth_example extends CI_Controller
 
 			if($this->form_validation->run() == TRUE)
 			{
-				$permissions = gmp_init(0);
-				if($this->input->post('permissions'))
-				{
-					foreach($this->input->post('permissions') as $_perm => $on)
-					{
-						gmp_setbit($permissions, $_perm);
-					}
-				}
 				$group = array(
 					'name' => $this->input->post('name'),
 					'description' => $this->input->post('description'),
-					'permissions' => gmp_strval($permissions)
+					'permissions' => $this->input->post('permissions')
 				);
 
 				if($this->bitauth->update_group($group_id, $group))
