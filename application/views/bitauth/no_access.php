@@ -6,7 +6,7 @@
 	<style type="text/css">
 		body { font-family: Arial, sans-serif; font-size: 12px; }
 		h2 { margin: 0 0 8px 0; }
-		form { width: 500px; margin: 7% auto 10px auto; padding: 18px; border: 1px solid #262626; text-align: center; }
+		form { width: 500px; margin: 4% auto 10px auto; padding: 18px; border: 1px solid #262626; text-align: center; }
 	</style>
 </head>
 <body>

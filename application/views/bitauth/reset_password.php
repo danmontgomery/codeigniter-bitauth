@@ -14,7 +14,7 @@
 		input[type=checkbox] { margin-bottom: 4px; position: relative; top: 2px; }
 		input[type=text], input[type=password], textarea { width: 100%; display: block; }
 		.error { font-weight: bold; color: #F00; }
-		.logininfo { width: 300px; margin: 7% auto 0 auto; }
+		.logininfo { width: 300px; margin: 4% auto 0 auto; }
 		.creds { width: 600px; margin: 0 auto; padding: 0; }
 	</style>
 </head>
@@ -25,13 +25,13 @@
 
 		echo '<h2>Reset Password: '.$bitauth->username.'</h2>';
 
-		echo form_label('New Password', 'new_password');
-		echo form_password('new_password', NULL, array('id' => 'new_password'));
+		echo form_label('New Password', 'password');
+		echo form_password('password', NULL, array('id' => 'password'));
 		echo form_label('Confirm New Password', 'confirm_password');
 		echo form_password('confirm_password', NULL, array('id' => 'confirm_password'));
-		echo form_submit('submit', 'Reset Password');
+		echo form_submit('submit', 'Reset Password').' or '.anchor('bitauth_example', 'Cancel');
 
-		echo validation_errors();
+		echo ( ! empty($error) ? $error : '' );
 
 		echo form_close();
 	?>

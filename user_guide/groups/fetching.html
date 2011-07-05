@@ -1,0 +1,130 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>BitAuth User Guide : Fetching Groups</title>
+
+<style type='text/css' media='all'>@import url('../userguide.css');</style>
+<link rel='stylesheet' type='text/css' media='all' href='../userguide.css' />
+
+<script type="text/javascript" src="../nav/nav.js"></script>
+<script type="text/javascript" src="../nav/prototype.lite.js"></script>
+<script type="text/javascript" src="../nav/moo.fx.js"></script>
+<script type="text/javascript" src="../nav/user_guide_menu.js"></script>
+
+<meta http-equiv='expires' content='-1' />
+<meta http-equiv= 'pragma' content='no-cache' />
+<meta name='robots' content='all' />
+<meta name='author' content='Dan Montgomery' />
+<meta name='description' content='BitAuth User Guide' />
+
+</head>
+<body>
+
+
+<!-- START NAVIGATION -->
+<div id="nav"><div id="nav_inner"><script type="text/javascript">create_menu('../');</script></div></div>
+<div id="nav2"><a name="top"></a><a href="javascript:void(0);" onclick="myHeight.toggle();"><img src="../images/nav_toggle_darker.jpg" width="154" height="43" border="0" title="Toggle Table of Contents" alt="Toggle Table of Contents" /></a></div>
+<div id="masthead">
+<table cellpadding="0" cellspacing="0" border="0" style="width:100%">
+<tr>
+<td><h1>BitAuth User Guide Version 1.0</h1></td>
+<td id="breadcrumb_right"><a href="../toc.html">Table of Contents</a></td>
+</tr>
+</table>
+</div>
+<!-- END NAVIGATION -->
+
+
+<!-- START BREADCRUMB -->
+
+<table cellpadding="0" cellspacing="0" border="0" style="width:100%">
+<tr>
+<td id="breadcrumb">
+<a href="http://dmontgomery.net/code/codeigniter-bitauth/">BitAuth</a> &nbsp;&#8250;&nbsp;
+<a href="../index.html">User Guide Home</a> &nbsp;&#8250;&nbsp;
+Fetching Groups
+</td>
+
+</tr>
+</table>
+<!-- END BREADCRUMB -->
+
+<br clear="all" />
+
+<!-- START CONTENT -->
+<div id="content">
+<h1>Fetching Groups</h1>
+<h2>$this->bitauth->get_groups()</h2>
+<p>Returns all groups. Each group object contains the following information:</p>
+
+<table cellpadding="0" cellspacing="1" border="0" style="width:100%" class="tableborder">
+<tr>
+	<th>Attribute</th>
+	<th>Example</th>
+	<th width="70%">Description</th>
+</tr>
+<tr>
+	<td class="td"><strong>group_id</strong></td>
+	<td class="td">1</td>
+	<td class="td">Unique ID of this group.</td>
+</tr>
+<tr>
+	<td class="td"><strong>name</strong></td>
+	<td class="td">Example Group</td>
+	<td class="td">Name of the group.</td>
+</tr>
+<tr>
+	<td class="td"><strong>description</strong></td>
+	<td class="td">This is an example group</td>
+	<td class="td">Description of the group.</td>
+</tr>
+<tr>
+	<td class="td"><strong>permissions</strong></td>
+	<td class="td">4</td>
+	<td class="td">Numeric representation of the group's permissions settings.</td>
+</tr>
+<tr>
+	<td class="td"><strong>members</strong></td>
+	<td class="td">array(1, 4, 15)</td>
+	<td class="td">Array of <var>user_id</var>s for users who are members of this group.</td>
+</tr>
+</table>
+
+<p><dfn>get_groups()</dfn> returns an array of objects containing this information. You might iterate through all groups like:</p>
+<pre>$all_groups = $this->bitauth->get_groups();
+
+foreach($all_groups as $group)
+{
+    echo $group->name.'&lt;br/&gt;';
+}</pre>
+
+<p>For information on checking a group's permissions, see <a href="../permissions/checking.html">Checking Permissions</a>.</p>
+
+<h2>$this->bitauth->get_group_by_id(<dfn>$group_id</dfn>)</h2>
+<p>Returns an object with the same information as <dfn>get_groups()</dfn> for one group, by group_id. Returns <var>FALSE</var> on failure.</p>
+<pre>$group = $this->bitauth->get_group_by_id(1);
+
+if($group == FALSE)
+{
+    echo 'Group Not Found';
+}
+else
+{
+    echo 'Group Name: '.$group->name;
+}</pre>
+<h2>$this->bitauth->get_group_by_name(<dfn>$group_name</dfn>)</h2>
+<p>Returns an object with the same information as <dfn>get_groups()</dfn> for one group, by name. <dfn>$group_name</dfn> is case-insensitive. Returns <var>FALSE</var> on failure.</p>
+
+</div>
+<!-- END CONTENT -->
+
+
+<div id="footer">
+<p><a href="#top">Top of Page</a></p>
+</div>
+
+
+</body>
+</html>

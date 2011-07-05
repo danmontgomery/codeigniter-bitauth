@@ -1,0 +1,97 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>BitAuth User Guide : Form Validation</title>
+
+<style type='text/css' media='all'>@import url('../userguide.css');</style>
+<link rel='stylesheet' type='text/css' media='all' href='../userguide.css' />
+
+<script type="text/javascript" src="../nav/nav.js"></script>
+<script type="text/javascript" src="../nav/prototype.lite.js"></script>
+<script type="text/javascript" src="../nav/moo.fx.js"></script>
+<script type="text/javascript" src="../nav/user_guide_menu.js"></script>
+
+<meta http-equiv='expires' content='-1' />
+<meta http-equiv= 'pragma' content='no-cache' />
+<meta name='robots' content='all' />
+<meta name='author' content='Dan Montgomery' />
+<meta name='description' content='BitAuth User Guide' />
+
+</head>
+<body>
+
+
+<!-- START NAVIGATION -->
+<div id="nav"><div id="nav_inner"><script type="text/javascript">create_menu('../');</script></div></div>
+<div id="nav2"><a name="top"></a><a href="javascript:void(0);" onclick="myHeight.toggle();"><img src="../images/nav_toggle_darker.jpg" width="154" height="43" border="0" title="Toggle Table of Contents" alt="Toggle Table of Contents" /></a></div>
+<div id="masthead">
+<table cellpadding="0" cellspacing="0" border="0" style="width:100%">
+<tr>
+<td><h1>BitAuth User Guide Version 1.0</h1></td>
+<td id="breadcrumb_right"><a href="../toc.html">Table of Contents</a></td>
+</tr>
+</table>
+</div>
+<!-- END NAVIGATION -->
+
+
+<!-- START BREADCRUMB -->
+
+<table cellpadding="0" cellspacing="0" border="0" style="width:100%">
+<tr>
+<td id="breadcrumb">
+<a href="http://dmontgomery.net/code/codeigniter-bitauth/">BitAuth</a> &nbsp;&#8250;&nbsp;
+<a href="../index.html">User Guide Home</a> &nbsp;&#8250;&nbsp;
+Form Validation
+</td>
+
+</tr>
+</table>
+<!-- END BREADCRUMB -->
+
+<br clear="all" />
+
+<!-- START CONTENT -->
+<div id="content">
+<h1>Form Validation</h1>
+<p>BitAuth comes with an extended Form Validation library with methods to help validate input for users and groups.</p>
+<table cellpadding="0" cellspacing="1" border="0" style="width:100%" class="tableborder">
+<tr>
+	<th>Rule</th>
+	<th>Parameter</th>
+	<th width="50%">Description</th>
+	<th>Example</th>
+</tr>
+<tr>
+	<td class="td"><strong>bitauth_unique_username</strong></td>
+	<td class="td">Yes</td>
+	<td class="td">Returns FALSE if the username is not unique. Pass a <var>user_id</var> as an optional parameter to exclude that user from the check.</td>
+	<td class="td">bitauth_unique_username<br/>bitauth_unique_username[2]</td>
+</tr>
+<tr>
+	<td class="td"><strong>bitauth_unique_group</strong></td>
+	<td class="td">Yes</td>
+	<td class="td">Returns FALSE if the group name is not unique. Pass a <var>group_id</var> as an optional parameter to exclude that group from the check. </td>
+	<td class="td">bitauth_unique_group<br/>bitauth_unique_group[2]</td>
+</tr>
+<tr>
+	<td class="td"><strong>bitauth_valid_password</strong></td>
+	<td class="td">No</td>
+	<td class="td">Returns FALSE if the password does not meet the complexity requirements you have specified in the <a href="./config.html">configuration</a>. This rule
+		also checks the <dfn>pwd_min_length</dfn> and <dfn>pwd_max_length</dfn> you have specified, so separate use of those rules is unnecessary.</td>
+	<td class="td"></td>
+</tr>
+</table>
+</div>
+<!-- END CONTENT -->
+
+
+<div id="footer">
+<p><a href="#top">Top of Page</a></p>
+</div>
+
+
+</body>
+</html>

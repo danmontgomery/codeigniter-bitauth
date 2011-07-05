@@ -1,0 +1,93 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>BitAuth User Guide</title>
+
+<style type='text/css' media='all'>@import url('userguide.css');</style>
+<link rel='stylesheet' type='text/css' media='all' href='userguide.css' />
+
+<script type="text/javascript" src="nav/nav.js"></script>
+<script type="text/javascript" src="nav/prototype.lite.js"></script>
+<script type="text/javascript" src="nav/moo.fx.js"></script>
+<script type="text/javascript" src="nav/user_guide_menu.js"></script>
+
+<meta http-equiv='expires' content='-1' />
+<meta http-equiv= 'pragma' content='no-cache' />
+<meta name='robots' content='all' />
+<meta name='author' content='Dan Montgomery' />
+<meta name='description' content='BitAuth User Guide' />
+
+</head>
+<body>
+
+
+<!-- START NAVIGATION -->
+<div id="nav"><div id="nav_inner"><script type="text/javascript">create_menu('null');</script></div></div>
+<div id="nav2"><a name="top"></a><a href="javascript:void(0);" onclick="myHeight.toggle();"><img src="images/nav_toggle_darker.jpg" width="154" height="43" border="0" title="Toggle Table of Contents" alt="Toggle Table of Contents" /></a></div>
+<div id="masthead">
+<table cellpadding="0" cellspacing="0" border="0" style="width:100%">
+<tr>
+<td><h1>BitAuth User Guide Version 1.0</h1></td>
+<td id="breadcrumb_right"><a href="./toc.html">Table of Contents</a></td>
+</tr>
+</table>
+</div>
+<!-- END NAVIGATION -->
+
+
+<!-- START BREADCRUMB -->
+
+<table cellpadding="0" cellspacing="0" border="0" style="width:100%">
+<tr>
+<td id="breadcrumb">
+<a href="http://dmontgomery.net/code/codeigniter-bitauth/">BitAuth</a> &nbsp;&#8250;&nbsp;
+User Guide Home
+</td>
+
+</tr>
+</table>
+<!-- END BREADCRUMB -->
+
+<!-- START CONTENT -->
+<div id="content">
+
+<h1>Requirements</h1>
+<ul>
+	<li>PHP 5.1.6+</li>
+	<li>CodeIgniter 2.0+ (BitAuth was built on Reactor)</li>
+	<li>php-gmp</li>
+</ul>
+
+<h1>Features</h1>
+<ul>
+	<li>Password complexity rules: Along with minimum and maximum length, specify the required number of:
+		<ul>
+			<li>Uppercase Characters</li>
+			<li>Numbers</li>
+			<li>Special Characters</li>
+		</ul>
+	</li>
+	<li>Password aging: Require your users to change their passwords at a set interval</li>
+	<li>Completely custom userdata: Easily customize BitAuth to include any custom you want. Full name, Nickname, Phone number, Favorite color... You name it!</li>
+	<li>Group-based permissions: Create groups, and assign users to your groups. Your permissions are set on a group, not a user,
+		so changing user permissions, whether the scale is large or small, is <u>fast</u> and <u>painless</u>.</li>
+	<li>Text-based permissions slugs: Simply list your permissions in the configuration file, then check against them in your code.
+		BitAuth handles everything in between.</li>
+</ul>
+
+<h1>Download</h1>
+<p>BitAuth is available on GitHub at <a href="http://www.github.com/danmontgomery/codeigniter-bitauth">http://www.github.com/danmontgomery/codeigniter-bitauth</a>.</p>
+
+</div>
+<!-- END CONTENT -->
+
+
+<div id="footer">
+<p><a href="#top">Top of Page</a></p>
+</div>
+
+
+</body>
+</html>

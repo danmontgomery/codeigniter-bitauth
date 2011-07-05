@@ -14,7 +14,7 @@
 		input[type=checkbox] { margin-bottom: 4px; position: relative; top: 2px; }
 		input[type=text], input[type=password], textarea { width: 100%; display: block; }
 		.error { font-weight: bold; color: #F00; }
-		.logininfo { width: 300px; margin: 7% auto 0 auto; }
+		.logininfo { width: 300px; margin: 4% auto 0 auto; }
 		.creds { width: 600px; margin: 0 auto; padding: 0; }
 	</style>
 </head>
@@ -45,16 +45,16 @@
 			echo '<p>'.( ! empty($group) ? $group->description : 'N/A').'</p>';
 		}
 
-		echo form_label('Permissions', 'permissions');
-		$permissions = $bitauth->get_all_permissions();
+		$permissions = $bitauth->get_permissions();
 		$slugs = array_keys($permissions);
 		$submitted = $this->input->post('permissions');
 
+		echo form_label('Permissions', 'permissions');
 		foreach(array_values($permissions) as $_index => $_desc)
 		{
 			if($edit == TRUE)
 			{
-				echo '<div>'.form_checkbox('permissions['.$_index.']', TRUE, (isset($submitted[$_index]) || ( ! empty($group) && $bitauth->has_perm($slugs[$_index], $group->permissions)) ? TRUE : FALSE )).' '.$_desc.'</div>';
+				echo '<div>'.form_checkbox('permissions[]', $slugs[$_index], (isset($submitted[$_index]) || ( ! empty($group) && $bitauth->has_perm($slugs[$_index], $group->permissions)) ? TRUE : FALSE )).' '.$_desc.'</div>';
 			}
 			else if($bitauth->has_perm($slugs[$_index], $group->permissions))
 			{
@@ -65,6 +65,33 @@
 		if($edit != TRUE && $group->permissions == 0)
 		{
 			echo '<div>None</div>';
+		}
+
+		$submitted = $this->input->post('members');
+		if($submitted === FALSE)
+			$submitted = array();
+
+		echo '<div style="margin-top: 12px;">'.form_label('Members', 'members').'</div>';
+		foreach($bitauth->get_users() as $_user)
+		{
+			if($edit == TRUE)
+			{
+				if( in_array($_user->user_id, $submitted)
+				   || ( isset($group) && in_array($_user->user_id, $group->members)))
+				{
+					$checked = TRUE;
+				}
+				else
+				{
+					$checked = FALSE;
+				}
+
+				echo '<div>'.form_checkbox('members[]', $_user->user_id, $checked).' '.$_user->username.' ('.$_user->fullname.')</div>';
+			}
+			else if(in_array($_user->user_id, $group->members))
+			{
+				echo '<div>'.$_user->username.' ('.$_user->fullname.')</div>';
+			}
 		}
 
 		if($edit == TRUE)
@@ -80,9 +107,10 @@
 
 		echo form_close();
 		echo '<p class="creds">
-			This example uses a sample permission, <strong>can_edit</strong>, to showcase the ease of use of Bitauth. When logged in as adminstrator,
-			you can add and edit users and groups. When logged in as the default user, you can only view this information, not make any edits.
+			This example uses two sample permissions: <strong>can_edit</strong> and <strong>can_change_pw</strong> to showcase the ease of use of Bitauth.
+			When logged in as adminstrator, you have full access. When logged in as the default user, you can only view user and group information, and reset user passwords.
 		</p>';
+
 	?>
 </body>
 </html>

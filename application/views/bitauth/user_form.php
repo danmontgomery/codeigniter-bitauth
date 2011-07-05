@@ -8,12 +8,13 @@
 		h2 { margin: 0 0 8px 0; }
 		p { margin-top: 0; }
 		form { width: 300px; margin: 0 auto 10px auto; padding: 18px; border: 1px solid #262626; }
-		label, input { margin: 0; }
+		label, input, textarea { margin: 0; }
 		label { display: block; font-weight: bold; }
-		input { margin-bottom: 12px; }
-		input[type=text], input[type=password] { width: 100%; display: block; }
+		input[type=text], input[type=password], input[type=submit], textarea { margin-bottom: 12px; }
+		input[type=checkbox] { margin-bottom: 4px; position: relative; top: 2px; }
+		input[type=text], input[type=password], textarea { width: 100%; display: block; }
 		.error { font-weight: bold; color: #F00; }
-		.logininfo { width: 300px; margin: 7% auto 0 auto; }
+		.logininfo { width: 300px; margin: 4% auto 0 auto; }
 		.creds { width: 600px; margin: 0 auto; padding: 0; }
 	</style>
 </head>
@@ -62,20 +63,53 @@
 				echo form_password('password', NULL, array('id' => 'password'));
 			}
 
-			echo form_submit('submit', ( ! empty($user) ? 'Save Changes' : 'Add User' )).' or '.anchor('bitauth_example', 'Cancel');
+		}
+
+		$submitted = $this->input->post('groups');
+		if($submitted === FALSE)
+			$submitted = array();
+
+		echo form_label('Groups', 'groups');
+		foreach($bitauth->get_groups() as $_group)
+		{
+			if($edit == TRUE)
+			{
+				if( in_array($_group->group_id, $submitted)
+				   || ( isset($user) && in_array($_group->group_id, $user->groups))
+				   || ( ! isset($user) && $_group->group_id == $bitauth->_default_group_id))
+				{
+					$checked = TRUE;
+				}
+				else
+				{
+					$checked = FALSE;
+				}
+
+				echo '<div>'.form_checkbox('groups[]', $_group->group_id, $checked).' '.$_group->name.($_group->group_id == $bitauth->_default_group_id?' (Default)':'').'</div>';
+			}
+			else if(in_array($_group->group_id, $user->groups))
+			{
+				echo '<div>'.$_group->name.'</div>';
+			}
+		}
+
+		if($edit == TRUE)
+		{
+			echo form_submit('submit', ( ! empty($user) ? 'Save Changes' : 'Add User' ), 'style="margin-top: 12px;"').' or '.anchor('bitauth_example', 'Cancel');
 		}
 		else
 		{
-			echo anchor('bitauth_example', 'Back to Users');
+			echo '<div style="margin-top: 12px;">'.anchor('bitauth_example', 'Back to Users').'</div>';
 		}
 
 		echo ( ! empty($error) ? $error : '' );
 
 		echo form_close();
 		echo '<p class="creds">
-			This example uses a sample permission, <strong>can_edit</strong>, to showcase the ease of use of Bitauth. When logged in as adminstrator,
-			you can add and edit users and groups. When logged in as the default user, you can only view this information, not make any edits.
+			This example uses two sample permissions: <strong>can_edit</strong> and <strong>can_change_pw</strong> to showcase the ease of use of Bitauth.
+			When logged in as adminstrator, you have full access. When logged in as the default user, you can only view user and group information, and reset user passwords.
 		</p>';
+
 	?>
 </body>
 </html>

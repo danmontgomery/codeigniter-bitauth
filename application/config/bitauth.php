@@ -1,23 +1,15 @@
 <?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
 /**
- * Tables used by BitAuth
+ * Users must be activated before they can login
+ *
  */
-$config['table'] = array(
-	'users'		=> 'bitauth_users',
-	'groups'	=> 'bitauth_groups',
-	'assoc'		=> 'bitauth_assoc'
-);
-
-/**
- * Field users log in with, must be unique
- */
-$config['username_field'] = 'username';
+$config['require_user_activation'] = TRUE;
 
 /**
  * Default group users are added to when they first register
  */
-$config['default_group'] = 'Users';
+$config['default_group_id'] = 2;
 
 /**
  * Name of the cookie where "remember me" login is kept
@@ -39,7 +31,7 @@ $config['remember_token_updates'] = TRUE;
 /**
  * Number of days before passwords expire. To disable, set to FALSE
  */
-$config['pwd_max_age'] = FALSE;
+$config['pwd_max_age'] = 90;
 
 /**
  * Number of days before password expiration to notify users their
@@ -81,6 +73,16 @@ $config['pwd_complexity_chars'] = array(
 );
 
 /**
+ * Tables used by BitAuth
+ */
+$config['table'] = array(
+	'users'		=> 'bitauth_users',
+	'data'		=> 'bitauth_userdata',
+	'groups'	=> 'bitauth_groups',
+	'assoc'		=> 'bitauth_assoc'
+);
+
+/**
  * Your permissions slugs. These are how you call permissions checks
  * in your code. eg: if($this->bitauth->has_perm('example_perm_1'))
  */
@@ -88,7 +90,7 @@ $config['permissions'] = array(
 
 /**
  * THE FIRST PERMISSION IS ALWAYS THE ADMINISTRATOR PERMISSION
- * ANY GROUPS GIVEN THIS PERMISSION WILL HAVE FULL ACCESS
+ * ANY USERS IN GROUPS GIVEN THIS PERMISSION WILL HAVE FULL ACCESS
  */
 	'is_admin'		=> 'User is an Administrator',
 
@@ -97,6 +99,6 @@ $config['permissions'] = array(
  * Follow the format:
  * 'permission_slug' => 'Permission Description',
  */
-	'can_edit'		=> 'Can Add/Edit Users & Groups(Sample)',
+	'can_edit'		=> 'Can Add/Edit Users & Groups (Sample)',
 	'can_change_pw'	=> 'Can Change User Passwords (Sample)'
 );

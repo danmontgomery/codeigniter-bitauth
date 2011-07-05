@@ -1,0 +1,113 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>BitAuth User Guide : Editing Users</title>
+
+<style type='text/css' media='all'>@import url('../userguide.css');</style>
+<link rel='stylesheet' type='text/css' media='all' href='../userguide.css' />
+
+<script type="text/javascript" src="../nav/nav.js"></script>
+<script type="text/javascript" src="../nav/prototype.lite.js"></script>
+<script type="text/javascript" src="../nav/moo.fx.js"></script>
+<script type="text/javascript" src="../nav/user_guide_menu.js"></script>
+
+<meta http-equiv='expires' content='-1' />
+<meta http-equiv= 'pragma' content='no-cache' />
+<meta name='robots' content='all' />
+<meta name='author' content='Dan Montgomery' />
+<meta name='description' content='BitAuth User Guide' />
+
+</head>
+<body>
+
+
+<!-- START NAVIGATION -->
+<div id="nav"><div id="nav_inner"><script type="text/javascript">create_menu('../');</script></div></div>
+<div id="nav2"><a name="top"></a><a href="javascript:void(0);" onclick="myHeight.toggle();"><img src="../images/nav_toggle_darker.jpg" width="154" height="43" border="0" title="Toggle Table of Contents" alt="Toggle Table of Contents" /></a></div>
+<div id="masthead">
+<table cellpadding="0" cellspacing="0" border="0" style="width:100%">
+<tr>
+<td><h1>BitAuth User Guide Version 1.0</h1></td>
+<td id="breadcrumb_right"><a href="../toc.html">Table of Contents</a></td>
+</tr>
+</table>
+</div>
+<!-- END NAVIGATION -->
+
+
+<!-- START BREADCRUMB -->
+
+<table cellpadding="0" cellspacing="0" border="0" style="width:100%">
+<tr>
+<td id="breadcrumb">
+<a href="http://dmontgomery.net/code/codeigniter-bitauth/">BitAuth</a> &nbsp;&#8250;&nbsp;
+<a href="../index.html">User Guide Home</a> &nbsp;&#8250;&nbsp;
+Editing Users
+</td>
+
+</tr>
+</table>
+<!-- END BREADCRUMB -->
+
+<br clear="all" />
+
+<!-- START CONTENT -->
+<div id="content">
+<h1>Editing Users</h1>
+<p>Editing a user is as simple as passing a <var>user_id</var> and the user data to <dfn>update_user()</dfn>. <dfn>$data</dfn> may be an object or an array.
+	Only the information you give is updated, and what information you do give overwrites what is currently stored. Just like with <a href="./adding.html">add_user()</a>,
+	BitAuth	is able to determine whether the information you are updating is in the <dfn>users</dfn> table or the <dfn>data</dfn> table.</p>
+<h2>$this->bitauth->update_user(<dfn>$user_id</dfn>, <dfn>$data</dfn>)</h2>
+<p>A good example of how this works is found in <a href="./adding.html">$this->bitauth->activate()</a>:
+<pre>/**
+ * Bitauth::activate()
+ *
+ */
+public function activate($activation_code)
+{
+    $query = $this->db->where('activation_code', $activation_code)->get($this->_table['users']);
+    if($query && $query->num_rows())
+    {
+        $user = $query->row();
+        return $this->update_user(<dfn>$user->user_id</dfn>, array(<var>'active'</var> => <var>1</var>, <var>'activation_code'</var> => <var>''</var>));
+    }
+
+    return FALSE;
+}</pre>
+<p>This can be combined with <a href="./fetching.html">Fetching Users</a> to quickly and easily update user information:</p>
+<pre>$user = $this->bitauth->get_user_by_username(<var>'testuser'</var>);
+
+// Remove user from all groups
+$user->groups = array();
+$this->bitauth->update_user(<dfn>$user->user_id</dfn>, <dfn>$user</dfn>);</pre>
+<p>For a list of all user fields, see <a href="./fetching.html">Fetching Users</a>.</p>
+<h1>Disabling/Deleting Users</h1>
+<p>Users who are <strong>disabled</strong> will not be able to login, are removed from all groups, and aren't returned by <dfn>get_users()</dfn> or <dfn>get_groups()</dfn>
+	(see <a href="./fetching.html">Fetching Users</a> for information on overriding this).</p>
+<p>Users who are <strong>deleted</strong>, in addition to being disabled, also have their corresponding row deleted in the data table (<dfn>bitauth_userdata</dfn>).
+	Essential information (<var>user_id</var> and <var>username</var>) should be kept for posterity.</p>
+<h2>$this->bitauth->enable(<dfn>$user_id</dfn>)</h2>
+<p>Enables a user:</p>
+<pre>$this->bitauth->enable(2);</pre>
+
+<h2>$this->bitauth->disable(<dfn>$user_id</dfn>)</h2>
+<p>Disables a user:</p>
+<pre>$this->bitauth->disable(2);</pre>
+
+<h2>$this->bitauth->delete(<dfn>$user_id</dfn>)</h2>
+<p>Deletes a user:</p>
+<pre>$this->bitauth->delete(2);</pre>
+
+</div>
+<!-- END CONTENT -->
+
+
+<div id="footer">
+<p><a href="#top">Top of Page</a></p>
+</div>
+
+
+</body>
+</html>

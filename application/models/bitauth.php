@@ -5,19 +5,19 @@
  *
  * Group based bitwise permissions system
  *
- * @package Models
- * @access public
+ * @author Dan Montgomery <dan@dmontgomery.net>
+ * @license DBAD <http://dbad-license.org/license>
  */
 class Bitauth extends CI_Model
 {
 
 	public $_table;
-	public $_username_field;
-	public $_default_group;
+	public $_default_group_id;
 	public $_admin_permission;
 	public $_remember_token_name;
 	public $_remember_token_expires;
 	public $_remember_token_updates;
+	public $_require_user_activation;
 	public $_pwd_max_age;
 	public $_pwd_min_length;
 	public $_pwd_max_length;
@@ -25,8 +25,9 @@ class Bitauth extends CI_Model
 	public $_pwd_complexity_chars;
 	public $_error_delim_prefix = '<p>';
 	public $_error_delim_suffix = '</p>';
-	public $_permissions;
 
+	// IF YOU CHANGE THE STRUCTURE OF THE `users` TABLE, THAT CHANGE MUST BE REFLECTED HERE
+	private $_data_fields = array('username','password','salt','password_last_set','password_never_expires','remember_me','activation_code','active','enabled','last_login','last_login_ip');
 	private $_all_permissions;
 	private $_error;
 
@@ -34,32 +35,33 @@ class Bitauth extends CI_Model
 	{
 		parent::__construct();
 
+		$this->load->helper('language');
 		$this->lang->load('bitauth');
 
 		if( ! function_exists('gmp_init'))
 		{
-			log_message('error', $this->lang->line('bitauth_enable_gmp'));
-			show_error($this->lang->line('bitauth_enable_gmp'));
+			log_message('error', lang('bitauth_enable_gmp'));
+			show_error(lang('bitauth_enable_gmp'));
 		}
 
 		$this->load->database();
 		$this->load->library('session');
 		$this->load->config('bitauth', TRUE);
 
-		$this->_table					= $this->config->item('table', 'bitauth');
-		$this->_username_field			= $this->config->item('username_field', 'bitauth');
-		$this->_default_group			= $this->config->item('default_group', 'bitauth');
-		$this->_remember_token_name		= $this->config->item('remember_token_name', 'bitauth');
-		$this->_remember_token_expires	= $this->config->item('remember_token_expires', 'bitauth');
-		$this->_remember_token_updates	= $this->config->item('remember_token_updates', 'bitauth');
-		$this->_pwd_max_age				= $this->config->item('pwd_max_age', 'bitauth');
-		$this->_pwd_age_notification	= $this->config->item('pwd_age_notification', 'bitauth');
-		$this->_pwd_min_length			= $this->config->item('pwd_min_length', 'bitauth');
-		$this->_pwd_max_length			= $this->config->item('pwd_max_length', 'bitauth');
-		$this->_pwd_complexity			= $this->config->item('pwd_complexity', 'bitauth');
-		$this->_pwd_complexity_chars	= $this->config->item('pwd_complexity_chars', 'bitauth');
+		$this->_table						= $this->config->item('table', 'bitauth');
+		$this->_default_group_id			= $this->config->item('default_group_id', 'bitauth');
+		$this->_remember_token_name			= $this->config->item('remember_token_name', 'bitauth');
+		$this->_remember_token_expires		= $this->config->item('remember_token_expires', 'bitauth');
+		$this->_remember_token_updates		= $this->config->item('remember_token_updates', 'bitauth');
+		$this->_require_user_activation		= $this->config->item('require_user_activation', 'bitauth');
+		$this->_pwd_max_age					= $this->config->item('pwd_max_age', 'bitauth');
+		$this->_pwd_age_notification		= $this->config->item('pwd_age_notification', 'bitauth');
+		$this->_pwd_min_length				= $this->config->item('pwd_min_length', 'bitauth');
+		$this->_pwd_max_length				= $this->config->item('pwd_max_length', 'bitauth');
+		$this->_pwd_complexity				= $this->config->item('pwd_complexity', 'bitauth');
+		$this->_pwd_complexity_chars		= $this->config->item('pwd_complexity_chars', 'bitauth');
 
-		$this->_all_permissions			= $this->config->item('permissions', 'bitauth');
+		$this->_all_permissions				= $this->config->item('permissions', 'bitauth');
 
 		// Grab the first permission on the list as the administrator permission
 		$slugs = array_keys($this->_all_permissions);
@@ -70,11 +72,6 @@ class Bitauth extends CI_Model
 		if($this->logged_in())
 		{
 			$this->get_session_values();
-
-			if($this->input->cookie($this->_remember_token_name) && $this->_remember_token_updates)
-			{
-				$this->update_remember_token();
-			}
 		}
 		else if($this->input->cookie($this->_remember_token_name))
 		{
@@ -97,18 +94,30 @@ class Bitauth extends CI_Model
 		{
 			if($this->hash_password($password, $user->salt) === $user->password || ($password === NULL && $user->remember_me == $token))
 			{
+				if( ! $user->active)
+				{
+					$this->set_error(lang('bitauth_user_inactive'));
+					return FALSE;
+				}
+
 				$this->set_session_values($user);
 
 				if($remember != FALSE)
 				{
-					$this->update_remember_token();
+					$this->update_remember_token($user->username, $user->user_id);
 				}
+
+				// Update last login timestamp and IP
+				$this->update_user($user->user_id, array(
+					'last_login' => date('Y-m-d H:i:s', time()),
+					'last_login_ip' => ip2long($_SERVER['REMOTE_ADDR'])
+				));
 
 				return TRUE;
 			}
 		}
 
-		$this->set_error(sprintf(lang('bitauth_login_failed'), lang('bitauth_username_field')));
+		$this->set_error(sprintf(lang('bitauth_login_failed'), lang('bitauth_username')));
 		return FALSE;
 	}
 
@@ -118,21 +127,19 @@ class Bitauth extends CI_Model
 	 */
 	public function login_from_token()
 	{
-		if(($token = $this->input->cookie($this->_remember_token_name)) === FALSE)
+		if(($token = $this->input->cookie($this->_remember_token_name)))
 		{
-			return FALSE;
+
+			$token = explode("\n", $token);
+			$username = $token[0];
+
+			if($this->login($username, NULL, (bool)$this->_remember_token_updates, implode("\n", $token)))
+			{
+				return TRUE;
+			}
 		}
 
-		$token = explode("\n", $token);
-		$username = $token[0];
-		$session_id = $token[1];
-
-		if($this->login($username, NULL, (bool)$this->_remember_token_updates, $session_id))
-		{
-			return TRUE;
-		}
-
-		$this->delete_remember_token();
+		$this->logout();
 		return FALSE;
 	}
 
@@ -151,7 +158,7 @@ class Bitauth extends CI_Model
 			}
 		}
 
-		unset($this->{$this->_username_field});
+		unset($this->username);
 		$this->delete_remember_token();
 
 		return;
@@ -168,6 +175,7 @@ class Bitauth extends CI_Model
 		{
 			if($_key !== 'salt' && $_key !== 'password')
 			{
+				$this->$_key = $_value;
 				$session_data['bitauth_'.$_key] = $_value;
 			}
 		}
@@ -197,9 +205,8 @@ class Bitauth extends CI_Model
 			}
 			else
 			{
-				log_message('error', $this->lang->line('bitauth_data_error').$_key);
-				show_error($_key);
-				//show_error($this->lang->line('bitauth_data_error').$_key);
+				log_message('error', lang('bitauth_data_error').$_key);
+				show_error(lang('bitauth_data_error').$_key);
 			}
 		}
 	}
@@ -208,20 +215,28 @@ class Bitauth extends CI_Model
 	 * Bitauth::update_remember_token()
 	 *
 	 */
-	public function update_remember_token()
+	public function update_remember_token($username = NULL, $user_id = NULL)
 	{
 		if( ! $this->logged_in())
 		{
 			return;
 		}
 
-		$user_id = $this->_username_field;
+		if($username === NULL)
+		{
+			$username = $this->username;
+		}
+		if($user_id === NULL)
+		{
+			$user_id = $this->user_id;
+		}
+
 		$session_id = sha1(mt_rand(0, PHP_INT_MAX).time());
 
 		$cookie = array(
 			'prefix' => $this->config->item('cookie_prefix'),
 			'name' => $this->_remember_token_name,
-			'value' => $this->$user_id."\n".$session_id,
+			'value' => $username."\n".$session_id,
 			'expire' => $this->_remember_token_expires,
 			'domain' => $this->config->item('cookie_domain'),
 			'path' => $this->config->item('cookie_path'),
@@ -231,8 +246,8 @@ class Bitauth extends CI_Model
 		$this->input->set_cookie($cookie);
 
 		$this->db
-			->set('remember_me', $this->$user_id."\n".$session_id)
-			->where('user_id', $this->user_id)
+			->set('remember_me', $username."\n".$session_id)
+			->where('user_id', $user_id)
 			->update($this->_table['users']);
 	}
 
@@ -263,7 +278,7 @@ class Bitauth extends CI_Model
 	 * Bitauth::add_user()
 	 *
 	 */
-	public function add_user($data)
+	public function add_user($data, $require_activation = NULL)
 	{
 		if( ! is_array($data) && ! is_object($data))
 		{
@@ -271,11 +286,16 @@ class Bitauth extends CI_Model
 			return FALSE;
 		}
 
+		if($require_activation === NULL)
+		{
+			$require_activation = $this->_require_user_activation;
+		}
+
 		$data = (array)$data;
 
-		if(empty($data[$this->_username_field]))
+		if(empty($data['username']))
 		{
-			$this->set_error(sprintf(lang('bitauth_username_required'), $this->_username_field));
+			$this->set_error(sprintf(lang('bitauth_username_required'), lang('bitauth_username')));
 			return FALSE;
 		}
 
@@ -285,10 +305,32 @@ class Bitauth extends CI_Model
 			return FALSE;
 		}
 
+		$data['active'] = ! (bool)$require_activation;
+		if($require_activation)
+		{
+			$data['activation_code'] = sha1($this->salt().time());
+		}
+
 		// Just in case
 		if( ! empty($data['user_id']))
 		{
 			unset($data['user_id']);
+		}
+
+		if(isset($data['groups']))
+		{
+			$groups = $data['groups'];
+			unset($data['groups']);
+		}
+
+		$userdata = array();
+		foreach($data as $_key => $_val)
+		{
+			if( ! in_array($_key, $this->_data_fields))
+			{
+				$userdata[$_key] = $_val;
+				unset($data[$_key]);
+			}
 		}
 
 		$data['salt'] = $this->salt();
@@ -296,27 +338,32 @@ class Bitauth extends CI_Model
 		$data['password_last_set'] = date('Y-m-d H:i:s', time());
 
 		$this->db->trans_start();
-		if( ! $this->db->insert($this->_table['users'], $data))
-		{
-			$this->set_error(lang('bitauth_add_user_failed'));
-			$this->db->trans_rollback();
 
-			return FALSE;
-		}
+		$this->db->insert($this->_table['users'], $data);
 
 		$user_id = $this->db->insert_id();
-		$group = $this->get_group_by_name($this->_default_group);
-
-		if($group)
+		if( ! empty($userdata))
 		{
-			$this->db->insert($this->_table['assoc'], array('user_id' => $user_id, 'group_id' => $group->group_id));
+			$userdata['user_id'] = $user_id;
+			$this->db->insert($this->_table['data'], $userdata);
+		}
+
+		if(empty($groups))
+		{
+			$this->db->insert($this->_table['assoc'], array('user_id' => $user_id, 'group_id' => $this->_default_group_id));
 		}
 		else
 		{
-			$this->set_error(lang('bitauth_no_default_group'));
-			$this->db->trans_rollback();
+			$new_groups = array();
+			foreach($groups as $group_id)
+			{
+				$new_groups[] = array(
+					'user_id' => $user_id,
+					'group_id' => (int)$group_id
+				);
+			}
 
-			return FALSE;
+			$this->db->insert_batch($this->_table['assoc'], $new_groups);
 		}
 
 		if($this->db->trans_status() === FALSE)
@@ -357,8 +404,48 @@ class Bitauth extends CI_Model
 			unset($data['group_id']);
 		}
 
+		if(isset($data['members']))
+		{
+			$members = $data['members'];
+			unset($data['members']);
+		}
+
+		$permissions = gmp_init(0);
+		if(isset($data['permissions']) && is_array($data['permissions']))
+		{
+			foreach($data['permissions'] as $slug)
+			{
+				if(($index = $this->get_perm($slug)) !== FALSE)
+				{
+					gmp_setbit($permissions, $index);
+				}
+			}
+		}
+
+		$data['permissions'] = gmp_strval($permissions);
+
 		$this->db->trans_start();
-		if( ! $this->db->insert($this->_table['groups'], $data))
+
+		$this->db->insert($this->_table['groups'], $data);
+
+		$group_id = $this->db->insert_id();
+
+		// If we were given an array of user id's, set them as the group members
+		if( ! empty($members))
+		{
+			$new_members = array();
+			foreach(array_unique($members) as $user_id)
+			{
+				$new_members[] = array(
+					'group_id' => $group_id,
+					'user_id' => (int)$user_id
+				);
+			}
+
+			$this->db->insert_batch($this->_table['assoc'], $new_members);
+		}
+
+		if($this->db->trans_status() === FALSE)
 		{
 			$this->set_error(lang('bitauth_add_group_failed'));
 			$this->db->trans_rollback();
@@ -371,10 +458,27 @@ class Bitauth extends CI_Model
 	}
 
 	/**
+	 * Bitauth::activate()
+	 *
+	 */
+	public function activate($activation_code)
+	{
+		$query = $this->db->where('activation_code', $activation_code)->get($this->_table['users']);
+		if($query && $query->num_rows())
+		{
+			$user = $query->row();
+			return $this->update_user($user->user_id, array('active' => 1, 'activation_code' => ''));
+		}
+
+		$this->set_error(lang('biauth_activate_failed'));
+		return FALSE;
+	}
+
+	/**
 	 * Bitauth::update_user()
 	 *
 	 */
-	public function update_user_info($id, $data)
+	public function update_user($id, $data)
 	{
 		if( ! is_array($data) && ! is_object($data))
 		{
@@ -384,21 +488,61 @@ class Bitauth extends CI_Model
 
 		$data = (array)$data;
 
-		if(empty($data[$this->_username_field]))
+		if(isset($data['username']) && ! strlen($data['username']))
 		{
-			$this->set_error(sprintf(lang('bitauth_username_required'), $this->_username_field));
+			$this->set_error(sprintf(lang('bitauth_username_required'), lang('bitauth_username')));
 			return FALSE;
 		}
 
 		// Just in case
-		if( ! empty($data['user_id']))
+		unset($data['user_id'], $data['permissions'], $data['id']);
+
+		if(isset($data['groups']))
 		{
-			unset($data['user_id']);
+			$groups = $data['groups'];
+			unset($data['groups']);
+		}
+
+		$userdata = array();
+		foreach($data as $_key => $_val)
+		{
+			if( ! in_array($_key, $this->_data_fields))
+			{
+				$userdata[$_key] = $_val;
+				unset($data[$_key]);
+			}
 		}
 
 		$this->db->trans_start();
 
-		$this->db->set($data)->where('user_id', $id)->update($this->_table['users']);
+		if( ! empty($data))
+		{
+			$this->db->set($data)->where('user_id', $id)->update($this->_table['users']);
+		}
+
+		if( ! empty($userdata))
+		{
+			$this->db->set($userdata)->where('user_id', $id)->update($this->_table['data']);
+		}
+
+
+		if(isset($groups))
+		{
+			$this->db->where('user_id', $id)->delete($this->_table['assoc']);
+			$new_groups = array();
+			if( ! empty($groups))
+			{
+				foreach($groups as $group_id)
+				{
+					$new_groups[] = array(
+						'user_id' => $id,
+						'group_id' => (int)$group_id
+					);
+				}
+
+				$this->db->insert_batch($this->_table['assoc'], $new_groups);
+			}
+		}
 
 		if($this->db->trans_status() === FALSE)
 		{
@@ -413,7 +557,83 @@ class Bitauth extends CI_Model
 
 	}
 
-		/**
+	/**
+	 * Bitauth::enable()
+	 *
+	 */
+	public function enable($user_id)
+	{
+		return $this->disable($user_id, 1);
+	}
+
+	/**
+	 * Bitauth::disable()
+	 *
+	 */
+	public function disable($user_id, $enabled = 0)
+	{
+		if($user = $this->get_user_by_id($user_id, $enabled))
+		{
+			return $this->update_user($user_id, array('enabled' => $enabled));
+		}
+
+		$this->set_error(sprintf(lang('bitauth_user_not_found'), $user_id));
+		return FALSE;
+	}
+
+	/**
+	 * Bitauth::delete()
+	 *
+	 */
+	public function delete($user_id)
+	{
+		if($user = $this->get_user_by_id($user_id))
+		{
+			$this->db->trans_start();
+
+			$this->update_user($user_id, array('enabled' => 0, 'groups' => array()));
+			$this->db->where('user_id', $user_id)->delete($this->_table['data']);
+
+			if($this->db->trans_status() == FALSE)
+			{
+				$this->set_error(lang('bitauth_del_user_failed'));
+				$this->db->trans_rollback();
+				return FALSE;
+			}
+
+			$this->db->trans_commit();
+			return TRUE;
+		}
+
+		$this->set_error(sprintf(lang('bitauth_user_not_found'), $user_id));
+		return FALSE;
+	}
+
+	/**
+	 * Bitauth::set_password()
+	 *
+	 */
+	public function set_password($user_id, $new_password)
+	{
+		$salt = $this->salt();
+		$new_password = $this->hash_password($new_password, $salt);
+
+		$data = array(
+			'salt' => $salt,
+			'password' => $new_password,
+			'password_last_set' => date('Y-m-d H:i:s', time())
+		);
+
+		if($this->update_user($user_id, $data))
+		{
+			return TRUE;
+		}
+
+		//$this->set_error(lang('bitauth_set_pw_failed'));
+		return FALSE;
+	}
+
+	/**
 	 * Bitauth::update_group()
 	 *
 	 */
@@ -427,24 +647,26 @@ class Bitauth extends CI_Model
 
 		$data = (array)$data;
 
-		if(empty($data['name']))
-		{
-			$this->set_error(lang('bitauth_groupname_required'));
-			return FALSE;
-		}
-
 		// Just in case
-		if( ! empty($data['group_id']))
+		unset($data['group_id'], $data['id']);
+
+		// If this array was returned by get_groups(), don't try to update a non-existent column
+		if(isset($data['members']))
 		{
-			unset($data['group_id']);
+			$members = $data['members'];
+			unset($data['members']);
 		}
 
 		$permissions = gmp_init(0);
-		if(is_array($data['permissions']))
+
+		if(isset($data['permissions']) && is_array($data['permissions']))
 		{
-			foreach($data['permissions'] as $_perm => $on)
+			foreach($data['permissions'] as $slug)
 			{
-				gmp_setbit($permissions, $_perm);
+				if(($index = $this->get_perm($slug)) !== FALSE)
+				{
+					gmp_setbit($permissions, $index);
+				}
 			}
 		}
 
@@ -453,6 +675,26 @@ class Bitauth extends CI_Model
 		$this->db->trans_start();
 
 		$this->db->set($data)->where('group_id', $id)->update($this->_table['groups']);
+
+		// If we were given an array of user id's, set them as the group members
+		if(isset($members))
+		{
+			$this->db->where('group_id', $id)->delete($this->_table['assoc']);
+
+			$new_members = array();
+			if( ! empty($members))
+			{
+				foreach(array_unique($members) as $user_id)
+				{
+					$new_members[] = array(
+						'group_id' => $id,
+						'user_id' => (int)$user_id
+					);
+				}
+
+				$this->db->insert_batch($this->_table['assoc'], $new_members);
+			}
+		}
 
 		if($this->db->trans_status() === FALSE)
 		{
@@ -465,6 +707,28 @@ class Bitauth extends CI_Model
 		$this->db->trans_commit();
 		return TRUE;
 
+	}
+
+	/**
+	 * Bitauth::delete_group()
+	 *
+	 */
+	public function delete_group($group_id)
+	{
+		$this->db->trans_start();
+
+		$this->db->where('group_id', $group_id)->delete($this->_table['groups']);
+		$this->db->where('group_id', $group_id)->delete($this->_table['assoc']);
+
+		if($this->db->trans_status() == FALSE)
+		{
+			$this->set_error(lang('bitauth_del_group_failed'));
+			$this->db->trans_rollback();
+			return FALSE;
+		}
+
+		$this->db->trans_commit();
+		return TRUE;
 	}
 
 	/**
@@ -483,7 +747,7 @@ class Bitauth extends CI_Model
 			return FALSE;
 		}
 
-		if(($index = array_search($slug, array_keys($this->_all_permissions))) !== FALSE)
+		if(($index = $this->get_perm($slug)) !== FALSE)
 		{
 			if($slug != $this->_admin_permission && $this->has_perm($this->_admin_permission, $mask))
 			{
@@ -498,10 +762,28 @@ class Bitauth extends CI_Model
 	}
 
 	/**
-	 * Bitauth::get_all_permissions()
+	 * Bitauth::is_admin()
 	 *
 	 */
-	public function get_all_permissions()
+	public function is_admin($mask = NULL)
+	{
+		return $this->has_perm($this->_admin_permission, $mask);
+	}
+
+	/**
+	 * Bitauth::get_perm()
+	 *
+	 */
+	public function get_perm($slug)
+	{
+		return array_search($slug, array_keys($this->_all_permissions));
+	}
+
+	/**
+	 * Bitauth::get_permissions()
+	 *
+	 */
+	public function get_permissions()
 	{
 		return $this->_all_permissions;
 	}
@@ -517,7 +799,7 @@ class Bitauth extends CI_Model
 			$this->db->where('user_id !=', (int)$exclude_user);
 		}
 
-		$query = $this->db->where('LOWER(`'.$this->_username_field.'`)', strtolower($username))->get($this->_table['users']);
+		$query = $this->db->where('LOWER(`username`)', strtolower($username))->get($this->_table['users']);
 		if($query && $query->num_rows())
 		{
 			$this->set_error(lang('bitauth_unique_username'));
@@ -582,58 +864,100 @@ class Bitauth extends CI_Model
 	 * Bitauth::password_almost_expired()
 	 *
 	 */
-	public function password_almost_expired()
+	public function password_almost_expired($user_id = NULL)
 	{
-		if($this->_pwd_max_age == 0)
+		if($user_id === NULL)
+		{
+			$user = $this;
+		}
+		else
+		{
+			$user = $this->get_user_by_id($user_id);
+		}
+
+		if($this->_pwd_max_age == 0 || $user->password_never_expires == 1)
 		{
 			return FALSE;
 		}
 
-		return (bool)(time() > ( strtotime($this->password_last_set) + (($this->_pwd_max_age - $this->_pwd_age_notification) * 86400)));
+		return (bool)(time() > ( strtotime($user->password_last_set) + (($this->_pwd_max_age - $this->_pwd_age_notification) * 86400)));
 	}
 
 	/**
 	 * Bitauth::password_is_expired()
 	 *
 	 */
-	public function password_is_expired()
+	public function password_is_expired($user_id = NULL)
 	{
-		if($this->_pwd_max_age == 0)
+		if($user_id === NULL)
+		{
+			$user = $this;
+		}
+		else
+		{
+			$user = $this->get_user_by_id($user_id);
+		}
+
+		if($this->_pwd_max_age == 0 || $user->password_never_expires == 1)
 		{
 			return FALSE;
 		}
 
-		return (bool)(time() > ( strtotime($this->password_last_set) + ($this->_pwd_max_age * 86400) ));
+		return (bool)(time() > ( strtotime($user->password_last_set) + ($this->_pwd_max_age * 86400) ));
 	}
 
 	/**
 	 * Bitauth::get_users()
 	 *
 	 */
-	 public function get_users()
-	 {
-		return $this->db
+	public function get_users($include_disabled = FALSE)
+	{
+		if( ! $include_disabled)
+		{
+			$this->db->where('users.enabled', 1);
+		}
+
+		$query = $this->db
 			->select('users.*')
-			->select('GROUP_CONCAT(assoc.group_id) AS groups')
+			->select('userdata.*')
+			->select('GROUP_CONCAT(assoc.group_id SEPARATOR "|") AS groups')
 			->select('BIT_OR(groups.permissions) AS permissions')
+			->join($this->_table['data'].' userdata', 'userdata.user_id = users.user_id', 'left')
 			->join($this->_table['assoc'].' assoc', 'assoc.user_id = users.user_id', 'left')
 			->join($this->_table['groups'].' groups', 'groups.group_id = assoc.group_id', 'left')
 			->group_by('users.user_id')
 			->get($this->_table['users'].' users');
-	 }
+
+		if($query && $query->num_rows())
+		{
+			$ret = array();
+			$result = $query->result();
+			foreach($result as $row)
+			{
+				$row->groups = explode('|', $row->groups);
+				$row->last_login_ip = long2ip($row->last_login_ip);
+
+				$ret[] = $row;
+			}
+
+			return $ret;
+		}
+
+		return FALSE;
+	}
 
 	/**
 	 * Bitauth::get_user_by_username()
 	 *
 	 */
-	public function get_user_by_username($username)
+	public function get_user_by_username($username, $include_disabled = FALSE)
 	{
-		$this->db->where('users.'.$this->_username_field, $username);
+		$this->db->where('users.username', $username);
+		$users = $this->get_users($include_disabled);
 
-		$query = $this->get_users();
-		if($query && $query->num_rows())
+		if(is_array($users) && ! empty($users))
 		{
-			return $query->row();
+			return $users[0];
 		}
 
 		return FALSE;
@@ -643,14 +967,14 @@ class Bitauth extends CI_Model
 	 * Bitauth::get_user_by_id()
 	 *
 	 */
-	public function get_user_by_id($id)
+	public function get_user_by_id($id, $include_disabled = FALSE)
 	{
 		$this->db->where('users.user_id', $id);
+		$users = $this->get_users($include_disabled);
 
-		$query = $this->get_users();
-		if($query && $query->num_rows())
+		if(is_array($users) && ! empty($users))
 		{
-			return $query->row();
+			return $users[0];
 		}
 
 		return FALSE;
@@ -660,14 +984,29 @@ class Bitauth extends CI_Model
 	  * Bitauth::get_groups()
 	  *
 	  */
-	 public function get_groups()
-	 {
-		return $this->db
-			->select('groups.*, GROUP_CONCAT(assoc.user_id) AS members')
+	public function get_groups()
+	{
+		$query = $this->db
+			->select('groups.*, GROUP_CONCAT(assoc.user_id SEPARATOR "|") AS members')
 			->join($this->_table['assoc'].' assoc', 'assoc.group_id = groups.group_id', 'left')
 			->group_by('groups.group_id')
 			->get($this->_table['groups'].' groups');
-	 }
+
+		if($query && $query->num_rows())
+		{
+			$ret = array();
+			$result = $query->result();
+			foreach($result as $row)
+			{
+				$row->members = explode('|', $row->members);
+				$ret[] = $row;
+			}
+
+			return $ret;
+		}
+
+		return FALSE;
+	}
 
 	/**
 	 * Bitauth::get_group_by_name()
@@ -675,12 +1014,12 @@ class Bitauth extends CI_Model
 	 */
 	public function get_group_by_name($group_name)
 	{
-		$this->db->where('groups.name', $group_name);
+		$this->db->where('LOWER(groups.name)', strtolower($group_name));
+		$groups = $this->get_groups();
 
-		$query = $this->get_groups();
-		if($query && $query->num_rows())
+		if(is_array($groups) && ! empty($groups))
 		{
-			return $query->row();
+			return $groups[0];
 		}
 
 		return FALSE;
@@ -693,11 +1032,11 @@ class Bitauth extends CI_Model
 	public function get_group_by_id($id)
 	{
 		$this->db->where('groups.group_id', $id);
+		$groups = $this->get_groups();
 
-		$query = $this->get_groups();
-		if($query && $query->num_rows())
+		if(is_array($groups) && ! empty($groups))
 		{
-			return $query->row();
+			return $groups[0];
 		}
 
 		return FALSE;
@@ -749,9 +1088,9 @@ class Bitauth extends CI_Model
 	 * Bitauth::salt()
 	 *
 	 */
-	public function salt()
+	public function salt($length = 10)
 	{
-		return substr(md5(mt_rand(0, PHP_INT_MAX).time()), -10);
+		return substr(md5(mt_rand(0, PHP_INT_MAX).time()), ($length*-1));
 	}
 
 	/**
@@ -760,14 +1099,14 @@ class Bitauth extends CI_Model
 	 */
 	public function logged_in()
 	{
-		return (bool)$this->session->userdata('bitauth_'.$this->_username_field);
+		return (bool)$this->session->userdata('bitauth_username');
 	}
 
 	/**
 	 * Bitauth::complexity_requirements()
 	 *
 	 */
-	public function complexity_requirements()
+	public function complexity_requirements($seperator = '<br/>')
 	{
 		$ret = array();
 
@@ -779,7 +1118,7 @@ class Bitauth extends CI_Model
 			}
 		}
 
-		return implode('<br/>', $ret);
+		return implode($seperator, $ret);
 	}
 
 }

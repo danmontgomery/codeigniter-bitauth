@@ -1,0 +1,90 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>BitAuth User Guide : Customizing User Data</title>
+
+<style type='text/css' media='all'>@import url('../userguide.css');</style>
+<link rel='stylesheet' type='text/css' media='all' href='../userguide.css' />
+
+<script type="text/javascript" src="../nav/nav.js"></script>
+<script type="text/javascript" src="../nav/prototype.lite.js"></script>
+<script type="text/javascript" src="../nav/moo.fx.js"></script>
+<script type="text/javascript" src="../nav/user_guide_menu.js"></script>
+
+<meta http-equiv='expires' content='-1' />
+<meta http-equiv= 'pragma' content='no-cache' />
+<meta name='robots' content='all' />
+<meta name='author' content='Dan Montgomery' />
+<meta name='description' content='BitAuth User Guide' />
+
+</head>
+<body>
+
+
+<!-- START NAVIGATION -->
+<div id="nav"><div id="nav_inner"><script type="text/javascript">create_menu('../');</script></div></div>
+<div id="nav2"><a name="top"></a><a href="javascript:void(0);" onclick="myHeight.toggle();"><img src="../images/nav_toggle_darker.jpg" width="154" height="43" border="0" title="Toggle Table of Contents" alt="Toggle Table of Contents" /></a></div>
+<div id="masthead">
+<table cellpadding="0" cellspacing="0" border="0" style="width:100%">
+<tr>
+<td><h1>BitAuth User Guide Version 1.0</h1></td>
+<td id="breadcrumb_right"><a href="../toc.html">Table of Contents</a></td>
+</tr>
+</table>
+</div>
+<!-- END NAVIGATION -->
+
+
+<!-- START BREADCRUMB -->
+
+<table cellpadding="0" cellspacing="0" border="0" style="width:100%">
+<tr>
+<td id="breadcrumb">
+<a href="http://dmontgomery.net/code/codeigniter-bitauth/">BitAuth</a> &nbsp;&#8250;&nbsp;
+<a href="../index.html">User Guide Home</a> &nbsp;&#8250;&nbsp;
+Customizing User Data
+</td>
+
+</tr>
+</table>
+<!-- END BREADCRUMB -->
+
+<br clear="all" />
+
+<!-- START CONTENT -->
+<div id="content">
+<h1>Customizing User Data</h1>
+<p>BitAuth has a number of required fields, and they are all in the <dfn>users</dfn> table (default: <dfn>bitauth_users</dfn>).
+	Anything in the <dfn>data</dfn> (default: <dfn>bitauth_userdata</dfn>) table is optional, and you can customize this table
+	to include anything you like. <strong>This table will only be updated when data is passed to <dfn>add_user()</dfn> or <dfn>update_user()</dfn>
+	that is not found in the users table</strong>.</p>
+<p>To include custom user data in BitAuth, all you need to do is update the structure of <dfn>bitauth_userdata</dfn> with your new fields,
+	then pass data for those new fields to <dfn>add_user()</dfn> and <dfn>update_user()</dfn>. That's it! BitAuth determines which table
+	the data given to it belongs to, and it will insert or update the appropriate table. Also, just by being in the userdata table, your
+	custom data will be included with the user object that is returned when <a href="./fetching.html">fetching users</a>.</p>
+<p>For example, if you add the column <var>mydata</var> to the userdata table, you can access that attribute easily with:</p>
+<pre>$user = $this->bitauth->get_user_by_id(2);
+
+echo $user->mydata;</pre>
+<p>You can also set that column when adding or updating just like any other column:</p>
+<pre>$user = array(
+    'username' => 'testuser',
+    'password' => 'ABC123!',
+    'groups'   => array(2,5,7),
+    'mydata'   => 'This is my data!'
+);
+
+$this->bitauth->add_user($user);</pre>
+</div>
+<!-- END CONTENT -->
+
+
+<div id="footer">
+<p><a href="#top">Top of Page</a></p>
+</div>
+
+
+</body>
+</html>

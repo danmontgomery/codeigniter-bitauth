@@ -17,7 +17,7 @@
 		input { margin-bottom: 12px; }
 		input[type=text], input[type=password] { width: 100%; display: block; }
 		.error { font-weight: bold; color: #F00; }
-		.logininfo { width: 500px; margin: 7% auto 0 auto; }
+		.logininfo { width: 500px; margin: 4% auto 0 auto; }
 		.creds { width: 600px; margin: 0 auto; padding: 0; }
 	</style>
 </head>
@@ -30,7 +30,7 @@
 
 		$this->table->set_heading('Group', '');
 
-		foreach($groups->result() as $_group)
+		foreach($groups as $_group)
 		{
 			$this->table->add_row(array(
 				array('data' => $_group->name),
@@ -45,9 +45,10 @@
 
 		echo form_close();
 		echo '<p class="creds">
-			This example uses a sample permission, <strong>can_edit</strong>, to showcase the ease of use of Bitauth. When logged in as adminstrator,
-			you can add and edit users and groups. When logged in as the default user, you can only view this information, not make any edits.
+			This example uses two sample permissions: <strong>can_edit</strong> and <strong>can_change_pw</strong> to showcase the ease of use of Bitauth.
+			When logged in as adminstrator, you have full access. When logged in as the default user, you can only view user and group information, and reset user passwords.
 		</p>';
+
 	?>
 </body>
 </html>

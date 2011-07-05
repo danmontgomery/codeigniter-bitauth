@@ -12,7 +12,7 @@
 		td { padding: 6px 0; vertical-align: top; }
 		tbody tr:nth-child(odd) { background-color: #F2F2F2; }
 		form { width: 500px; margin: 0 auto 10px auto; padding: 18px; border: 1px solid #262626; }
-		.logininfo { width: 500px; margin: 7% auto 0 auto; }
+		.logininfo { width: 500px; margin: 4% auto 0 auto; }
 		.creds { width: 600px; margin: 0 auto; padding: 0; }
 	</style>
 </head>
@@ -25,19 +25,28 @@
 
 		$this->table->set_heading('Full Name', 'Username', '');
 
-		foreach($users->result() as $_user)
+		foreach($users as $_user)
 		{
-			$actions = anchor('bitauth_example/edit_user/'.$_user->user_id, ( $bitauth->has_perm('can_edit') ? 'Edit' : 'View' )).'<br/>&nbsp;';
+			$actions = array(anchor('bitauth_example/edit_user/'.$_user->user_id, ( $bitauth->has_perm('can_edit') ? 'Edit' : 'View' )));
 
-			if($bitauth->has_perm('can_change_pw') && ($bitauth->has_perm('is_admin') || ! $bitauth->has_perm('is_admin', $_user->permissions)))
+			if( ! $_user->active && $bitauth->has_perm('can_edit'))
 			{
-				$actions .= anchor('bitauth_example/reset_password/'.$_user->user_id, 'Reset Password');
+				$actions[] = anchor('bitauth_example/activate/'.$_user->activation_code, 'Activate');
+			}
+
+			if($bitauth->has_perm('can_change_pw') && ($bitauth->is_admin() || ! $bitauth->is_admin($_user->permissions)))
+			{
+				$actions[] = anchor('bitauth_example/reset_password/'.$_user->user_id, 'Reset Password');
+			}
+			else
+			{
+				$actions[] = '&nbsp;';
 			}
 
 			$this->table->add_row(array(
-				array('width' => '45%', 'data' => $_user->fullname),
+				array('width' => '40%', 'data' => $_user->fullname),
 				array('data' => $_user->username),
-				array('width' => '20%', 'style' => 'text-align: right;', 'data' => $actions)
+				array('width' => '20%', 'style' => 'text-align: right;', 'data' => implode('<br/>', $actions))
 			));
 		}
 
@@ -48,8 +57,8 @@
 
 		echo form_close();
 		echo '<p class="creds">
-			This example uses a sample permission, <strong>can_edit</strong>, to showcase the ease of use of Bitauth. When logged in as adminstrator,
-			you can add and edit users and groups. When logged in as the default user, you can only view this information, not make any edits.
+			This example uses two sample permissions: <strong>can_edit</strong> and <strong>can_change_pw</strong> to showcase the ease of use of Bitauth.
+			When logged in as adminstrator, you have full access. When logged in as the default user, you can only view user and group information, and reset user passwords.
 		</p>';
 	?>
 </body>

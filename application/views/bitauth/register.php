@@ -6,7 +6,7 @@
 	<style type="text/css">
 		body { font-family: Arial, sans-serif; font-size: 12px; }
 		h2 { margin: 0 0 8px 0; }
-		form { width: 300px; margin: 7% auto 10px auto; padding: 18px; border: 1px solid #262626; }
+		form { width: 300px; margin: 4% auto 10px auto; padding: 18px; border: 1px solid #262626; }
 		label, input { margin: 0; }
 		label { display: block; font-weight: bold; }
 		input { margin-bottom: 12px; }

@@ -6,7 +6,7 @@
 	<style type="text/css">
 		body { font-family: Arial, sans-serif; font-size: 12px; }
 		h2 { margin: 0 0 8px 0; }
-		form { width: 300px; margin: 7% auto 10px auto; padding: 18px; border: 1px solid #262626; }
+		form { width: 300px; margin: 4% auto 10px auto; padding: 18px; border: 1px solid #262626; }
 		label, input { margin: 0; }
 		label { display: block; font-weight: bold; }
 		input { margin-bottom: 12px; }
@@ -25,6 +25,7 @@
 		echo form_input('username', set_value('username'), array('id' => 'username'));
 		echo form_label('Password', 'password');
 		echo form_password('password', NULL, array('id' => 'password'));
+		echo form_label(form_checkbox('remember_me', 1).' Remember Me','remember_me');
 		echo form_submit('login', 'Login').' or '.anchor('bitauth_example/register', 'Register');
 
 		echo ( ! empty($error) ? $error : '' );
