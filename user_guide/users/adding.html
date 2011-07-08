@@ -57,7 +57,7 @@ Adding Users
 <div id="content">
 <h1>Adding Users</h1>
 <p>When adding a user, there are two required fields: <var>username</var> and <var>password</var>. The <var>password</var> must be given
-	in <strong>clear text</strong>. BitAuth will handle the salt and encryption.</p>
+	in <strong>clear text</strong>. BitAuth will handle the password hashing.</p>
 <p>If you have <a href="./customizing.html">customized user data</a>, you only need to pass these fields to <dfn>add_user()</dfn> with all
 	of the other data, BitAuth will put them in the appropriate table.</p>
 <h2>$this->bitauth->add_user(<dfn>$data</dfn>, <dfn>$require_activation</dfn> = <var>NULL</var>)</h2>

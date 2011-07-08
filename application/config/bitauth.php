@@ -2,18 +2,20 @@
 
 /**
  * Users must be activated before they can login
- *
+ * Default: TRUE
  */
 $config['require_user_activation'] = TRUE;
 
 /**
- * Default group users are added to when they first register
+ * Default group users are added to when they first register (if one isn't specified)
+ * Default: 2
  */
 $config['default_group_id'] = 2;
 
 /**
  * Name of the cookie where "remember me" login is kept
  * (Prefixed with the cookie_prefix value in config.php, if one is set)
+ * Default: rememberme
  */
 $config['remember_token_name'] = 'rememberme';
 
@@ -24,12 +26,14 @@ $config['remember_token_name'] = 'rememberme';
 $config['remember_token_expires'] = 604800;
 
 /**
- * Does the "remember me" expiration time update every time the user does something?
+ * Does the "remember me" expiration time update every time the user revisits the site?
+ * Default: TRUE
  */
 $config['remember_token_updates'] = TRUE;
 
 /**
  * Number of days before passwords expire. To disable, set to FALSE
+ * Default: 90
  */
 $config['pwd_max_age'] = 90;
 
@@ -37,22 +41,26 @@ $config['pwd_max_age'] = 90;
  * Number of days before password expiration to notify users their
  * password is about to expire. They will be redirected to a form
  * to change password every time they login until password is changed.
+ * Default: 7
  */
 $config['pwd_age_notification'] = 7;
 
 /**
  * Required minimum length of passwords
+ * Default: 8
  */
 $config['pwd_min_length'] = 4;
 
 /**
  * Required maximum length of passwords. Set to 0 to disable
+ * Default: 20
  */
 $config['pwd_max_length'] = 20;
 
 /**
  * Optional password complexity options. Set a number for each to
  * require that many characters, or set to 0 to disable
+ * Default: 1, 1, 0
  */
 $config['pwd_complexity'] = array(
 	'uppercase' => 0,
@@ -81,6 +89,32 @@ $config['table'] = array(
 	'groups'	=> 'bitauth_groups',
 	'assoc'		=> 'bitauth_assoc'
 );
+
+/**
+ * Base-2 logarithm of the iteration count used for password stretching by Phpass
+ * See: http://en.wikipedia.org/wiki/Key_strengthening
+ * Default: 8
+ */
+$config['phpass_iterations'] = 8;
+
+/**
+ * Require the hashes to be portable to older systems?
+ * From: http://www.openwall.com/articles/PHP-Users-Passwords
+ * Unless you force the use of "portable" hashes, phpass' preferred hashing method is
+ * CRYPT_BLOWFISH, with a fallback to CRYPT_EXT_DES, and then a final fallback to the
+ * "portable" hashes.
+ * Default: FALSE
+ */
+$config['phpass_portable'] = FALSE;
+
+/**
+ * What format BitAuth stores the date as. By default, BitAuth uses DATETIME fields.
+ * If you want to store date as a unix timestamp, you just need to change the columns
+ * in the database, and change this line:
+ * $config['date_format'] = 'U';
+ * See: http://php.net/manual/en/function.date.php
+ */
+$config['date_format'] = 'Y-m-d H:i:s';
 
 /**
  * Your permissions slugs. These are how you call permissions checks

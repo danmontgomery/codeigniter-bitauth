@@ -25,9 +25,10 @@ class Bitauth extends CI_Model
 	public $_pwd_complexity_chars;
 	public $_error_delim_prefix = '<p>';
 	public $_error_delim_suffix = '</p>';
+	public $_date_format;
 
 	// IF YOU CHANGE THE STRUCTURE OF THE `users` TABLE, THAT CHANGE MUST BE REFLECTED HERE
-	private $_data_fields = array('username','password','salt','password_last_set','password_never_expires','remember_me','activation_code','active','enabled','last_login','last_login_ip');
+	private $_data_fields = array('username','password','password_last_set','password_never_expires','remember_me','activation_code','active','forgot_code','forgot_generated','enabled','last_login','last_login_ip');
 	private $_all_permissions;
 	private $_error;
 
@@ -48,6 +49,12 @@ class Bitauth extends CI_Model
 		$this->load->library('session');
 		$this->load->config('bitauth', TRUE);
 
+		// Load Phpass library
+		$this->load->library('phpass', array(
+			'iteration_count_log2' => $this->config->item('phpass_iterations', 'bitauth'),
+			'portable_hashes' => $this->config->item('phpass_portable', 'bitauth')
+		));
+
 		$this->_table						= $this->config->item('table', 'bitauth');
 		$this->_default_group_id			= $this->config->item('default_group_id', 'bitauth');
 		$this->_remember_token_name			= $this->config->item('remember_token_name', 'bitauth');
@@ -60,6 +67,7 @@ class Bitauth extends CI_Model
 		$this->_pwd_max_length				= $this->config->item('pwd_max_length', 'bitauth');
 		$this->_pwd_complexity				= $this->config->item('pwd_complexity', 'bitauth');
 		$this->_pwd_complexity_chars		= $this->config->item('pwd_complexity_chars', 'bitauth');
+		$this->_date_format					= $this->config->item('date_format', 'bitauth');
 
 		$this->_all_permissions				= $this->config->item('permissions', 'bitauth');
 
@@ -92,7 +100,7 @@ class Bitauth extends CI_Model
 
 		if($user !== FALSE)
 		{
-			if($this->hash_password($password, $user->salt) === $user->password || ($password === NULL && $user->remember_me == $token))
+			if($this->phpass->CheckPassword($password, $user->password) || ($password === NULL && $user->remember_me == $token))
 			{
 				if( ! $user->active)
 				{
@@ -107,11 +115,19 @@ class Bitauth extends CI_Model
 					$this->update_remember_token($user->username, $user->user_id);
 				}
 
-				// Update last login timestamp and IP
-				$this->update_user($user->user_id, array(
-					'last_login' => date('Y-m-d H:i:s', time()),
+				$data = array(
+					'last_login' => date($this->_date_format, time()),
 					'last_login_ip' => ip2long($_SERVER['REMOTE_ADDR'])
-				));
+				);
+
+				// If user logged in, they must have remembered their password.
+				if( ! empty($user->forgot_code))
+				{
+					$data['forgot_code'] = '';
+				}
+
+				// Update last login timestamp and IP
+				$this->update_user($user->user_id, $data);
 
 				return TRUE;
 			}
@@ -129,7 +145,6 @@ class Bitauth extends CI_Model
 	{
 		if(($token = $this->input->cookie($this->_remember_token_name)))
 		{
-
 			$token = explode("\n", $token);
 			$username = $token[0];
 
@@ -173,7 +188,7 @@ class Bitauth extends CI_Model
 		$session_data = array();
 		foreach($values as $_key => $_value)
 		{
-			if($_key !== 'salt' && $_key !== 'password')
+			if($_key !== 'password')
 			{
 				$this->$_key = $_value;
 				$session_data['bitauth_'.$_key] = $_value;
@@ -308,7 +323,7 @@ class Bitauth extends CI_Model
 		$data['active'] = ! (bool)$require_activation;
 		if($require_activation)
 		{
-			$data['activation_code'] = sha1($this->salt().time());
+			$data['activation_code'] = $this->generate_code();
 		}
 
 		// Just in case
@@ -333,9 +348,8 @@ class Bitauth extends CI_Model
 			}
 		}
 
-		$data['salt'] = $this->salt();
-		$data['password'] = $this->hash_password($data['password'], $data['salt']);
-		$data['password_last_set'] = date('Y-m-d H:i:s', time());
+		$data['password'] = $this->hash_password($data['password']);
+		$data['password_last_set'] = date($this->_date_format, time());
 
 		$this->db->trans_start();
 
@@ -470,7 +484,7 @@ class Bitauth extends CI_Model
 			return $this->update_user($user->user_id, array('active' => 1, 'activation_code' => ''));
 		}
 
-		$this->set_error(lang('biauth_activate_failed'));
+		$this->set_error(lang('bitauth_activate_failed'));
 		return FALSE;
 	}
 
@@ -554,7 +568,6 @@ class Bitauth extends CI_Model
 
 		$this->db->trans_commit();
 		return TRUE;
-
 	}
 
 	/**
@@ -610,18 +623,33 @@ class Bitauth extends CI_Model
 	}
 
 	/**
+	 * Bitauth::forgot_password()
+	 *
+	 */
+	public function forgot_password($user_id)
+	{
+		if($user = $this->get_user_by_id($user_id))
+		{
+			$user->forgot_code = $this->generate_code();
+			$user->forgot_generated = date($this->_date_format, time());
+
+			return $this->update_user($user_id, $user);
+		}
+
+		return FALSE;
+	}
+
+	/**
 	 * Bitauth::set_password()
 	 *
 	 */
 	public function set_password($user_id, $new_password)
 	{
-		$salt = $this->salt();
-		$new_password = $this->hash_password($new_password, $salt);
+		$new_password = $this->hash_password($new_password);
 
 		$data = array(
-			'salt' => $salt,
 			'password' => $new_password,
-			'password_last_set' => date('Y-m-d H:i:s', time())
+			'password_last_set' => date($this->_date_format, time())
 		);
 
 		if($this->update_user($user_id, $data))
@@ -1079,18 +1107,18 @@ class Bitauth extends CI_Model
 	 * Bitauth::hash_password()
 	 *
 	 */
-	public function hash_password($str, $salt)
+	public function hash_password($str)
 	{
-		return sha1($str.$salt);
+		return $this->phpass->HashPassword($str);
 	}
 
 	/**
-	 * Bitauth::salt()
+	 * Bitauth::generate_code()
 	 *
 	 */
-	public function salt($length = 10)
+	public function generate_code()
 	{
-		return substr(md5(mt_rand(0, PHP_INT_MAX).time()), ($length*-1));
+		return sha1(uniqid().time());
 	}
 
 	/**
