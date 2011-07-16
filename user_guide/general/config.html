@@ -146,6 +146,24 @@ BitAuth Configuration
 	</td>
 </tr>
 <tr>
+	<td class="td"><strong>phpass_iterations</strong></td>
+	<td class="td">8</td>
+	<td class="td">&nbsp;</td>
+	<td class="td"><p>Base-2 logarithm of the iteration count used for password stretching by Phpass. See: <a href="http://en.wikipedia.org/wiki/Key_strengthening">http://en.wikipedia.org/wiki/Key_strengthening</a>.</p></td>
+</tr>
+<tr>
+	<td class="td"><strong>phpass_portable</strong></td>
+	<td class="td"><var>FALSE</var></td>
+	<td class="td">&nbsp;</td>
+	<td class="td"><p>Require the hashes to be portable to older systems. If <var>FALSE</var>, phpass' preferred hashing method is CRYPT_BLOWFISH, with a fallback to CRYPT_EXT_DES, and then a final fallback to the "portable" hashes. See: <a href="http://www.openwall.com/articles/PHP-Users-Passwords">http://www.openwall.com/articles/PHP-Users-Passwords</a>.</p></td>
+</tr>
+<tr>
+	<td class="td"><strong>date_format</strong></td>
+	<td class="td">Y-m-d H:i:s</td>
+	<td class="td">&nbsp;</td>
+	<td class="td"><p>What format BitAuth stores timestamps in. Defaults to the MySQL DATETIME format. To use unix timestamps, change this value to <var>'U'</var> (in addition to changing your DB structure).</p></td>
+</tr>
+<tr>
 	<td class="td"><strong>permissions</strong></td>
 	<td class="td">&nbsp;</td>
 	<td class="td">&nbsp;</td>

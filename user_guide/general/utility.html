@@ -69,6 +69,14 @@ Utility Functions
 <p>This returns an array of all permissions defined in the <a href="./config.html">configuration</a>. The array is exactly as it's defined, in the format:</p>
 <pre>array( 'slug' => 'description' );</pre>
 
+<h2>$this->bitauth->set_login_field(<dfn>$field</dfn>)</h2>
+<p>Declares a field that must be matched on login. There is no processing done before or after this check, an exact match is required. So, for example, if you want a
+	case-insensitive match, you should run strtolower() on the data before it's stored in the database, and also on the form data before it's checked.</p>
+<p>More on this method can be found in <a href="../users/logging_in.html">Logging In/Logging Out</a>.</p>
+
+<h2>$this->bitauth->check_login_fields(<dfn>$user</dfn>, <dfn>$data</dfn>)</h2>
+<p>This is a utility function called by login() which checks any fields
+
 <h2>$this->bitauth->set_error(<dfn>$str</dfn>, <dfn>$update_session</dfn> = <var>TRUE</var>)</h2>
 <p>Stores an error message in BitAuth. Currently, BitAuth only stores one message at a time. By default, this message will be saved to the session,
 	you can disable this by passing <var>FALSE</var> as the second parameter.</p>
@@ -82,7 +90,10 @@ Utility Functions
 <h2>$this->bitauth->hash_password(<dfn>$str</dfn>)</h2>
 <p>This function will hash the string it is given. This is a utility function used internally by BitAuth.</p>
 
-<h2>$this->bitauth->complexity_requirements(<dfn>$seperator</dfn> = <var>'&lt;br/&gt;'</var>)</h2>
+<h2>$this->bitauth->generate_code()</h2>
+<p>Generates a random sha1 hash used for things like activation, forgot password, etc. Length of the string returned is 40 characters.</p>
+
+<h2>$this->bitauth->complexity_requirements(<dfn>$separator</dfn> = <var>'&lt;br/&gt;'</var>)</h2>
 <p>This function returns a string explaining the complexity requirements you have defined in your <a href="./config.html">configuration</a>.
 	Called by the <a href="./validation.html">bitauth_valid_password</a> form_validation rule.
 

@@ -27,10 +27,14 @@ class Bitauth extends CI_Model
 	public $_error_delim_suffix = '</p>';
 	public $_date_format;
 
-	// IF YOU CHANGE THE STRUCTURE OF THE `users` TABLE, THAT CHANGE MUST BE REFLECTED HERE
-	private $_data_fields = array('username','password','password_last_set','password_never_expires','remember_me','activation_code','active','forgot_code','forgot_generated','enabled','last_login','last_login_ip');
 	private $_all_permissions;
 	private $_error;
+	// IF YOU CHANGE THE STRUCTURE OF THE `users` TABLE, THAT CHANGE MUST BE REFLECTED HERE
+	private $_data_fields = array(
+		'username','password','password_last_set','password_never_expires','remember_me',
+		'activation_code','active','forgot_code','forgot_generated','enabled','last_login','last_login_ip',
+		'locked_out','locked_out_at'
+	);
 
 	public function __construct()
 	{
@@ -67,6 +71,8 @@ class Bitauth extends CI_Model
 		$this->_pwd_max_length				= $this->config->item('pwd_max_length', 'bitauth');
 		$this->_pwd_complexity				= $this->config->item('pwd_complexity', 'bitauth');
 		$this->_pwd_complexity_chars		= $this->config->item('pwd_complexity_chars', 'bitauth');
+		$this->_invalid_logins				= $this->config->item('invalid_logins', 'bitauth');
+		$this->_lockout_time				= $this->config->item('lockout_time', 'bitauth');
 		$this->_date_format					= $this->config->item('date_format', 'bitauth');
 
 		$this->_all_permissions				= $this->config->item('permissions', 'bitauth');
@@ -75,7 +81,8 @@ class Bitauth extends CI_Model
 		$slugs = array_keys($this->_all_permissions);
 		$this->_admin_permission = $slugs[0];
 
-		unset($slugs);
+		// Specify any extra login fields
+		$this->_login_fields = array();
 
 		if($this->logged_in())
 		{
@@ -87,6 +94,7 @@ class Bitauth extends CI_Model
 		}
 
 		$this->set_error($this->session->flashdata('bitauth_error'), FALSE);
+		unset($slugs);
 
 	}
 
@@ -94,14 +102,25 @@ class Bitauth extends CI_Model
 	 * Bitauth::login()
 	 *
 	 */
-	public function login($username, $password, $remember = FALSE, $token = NULL)
+	public function login($username, $password, $remember = FALSE, $extra = array(), $token = NULL)
 	{
+		if(empty($username))
+		{
+			$this->set_error(lang('bitauth_username_required'));
+			return FALSE;
+		}
+
 		$user = $this->get_user_by_username($username);
 
 		if($user !== FALSE)
 		{
 			if($this->phpass->CheckPassword($password, $user->password) || ($password === NULL && $user->remember_me == $token))
 			{
+				if( ! empty($this->_login_fields) && ! $this->check_login_fields($user, $extra))
+				{
+					return FALSE;
+				}
+
 				if( ! $user->active)
 				{
 					$this->set_error(lang('bitauth_user_inactive'));
@@ -148,7 +167,7 @@ class Bitauth extends CI_Model
 			$token = explode("\n", $token);
 			$username = $token[0];
 
-			if($this->login($username, NULL, (bool)$this->_remember_token_updates, implode("\n", $token)))
+			if($this->login($username, NULL, (bool)$this->_remember_token_updates, FALSE, implode("\n", $token)))
 			{
 				return TRUE;
 			}
@@ -177,6 +196,60 @@ class Bitauth extends CI_Model
 		$this->delete_remember_token();
 
 		return;
+	}
+
+	/**
+	 * Bitauth::check_login_fields()
+	 *
+	 */
+	public function check_login_fields($user, $data)
+	{
+		if(empty($this->_login_fields))
+		{
+			return TRUE;
+		}
+
+		foreach($this->_login_fields as $_field)
+		{
+			if( ! isset($user->{$_field}) || $user->{$_field} != $data[$_field])
+			{
+				if(lang('bitauth_invalid_'.$_field))
+				{
+					$this->set_error(lang('bitauth_invalid_'.$_field));
+				}
+				else
+				{
+					$this->set_error(sprintf(lang('bitauth_lang_not_found'), 'bitauth_invalid_'.$_field));
+				}
+				return FALSE;
+			}
+		}
+
+		return TRUE;
+	}
+
+	/**
+	 * Bitauth::add_login_field()
+	 *
+	 */
+	public function add_login_field($field)
+	{
+		$this->_login_fields[] = $field;
+	}
+
+	/**
+	 * Bitauth::log_attempt()
+	 *
+	 */
+	public function log_attempt($ip, $user_id = 0)
+	{
+		$data = array(
+			'ip_address' => ip2long($ip),
+			'user_id' = $user_id,
+			'time' => date($this->_date_format, time())
+		);
+
+		return $this->db->insert($this->_table['logins'], $data);
 	}
 
 	/**
@@ -1134,7 +1207,7 @@ class Bitauth extends CI_Model
 	 * Bitauth::complexity_requirements()
 	 *
 	 */
-	public function complexity_requirements($seperator = '<br/>')
+	public function complexity_requirements($separator = '<br/>')
 	{
 		$ret = array();
 
@@ -1146,7 +1219,7 @@ class Bitauth extends CI_Model
 			}
 		}
 
-		return implode($seperator, $ret);
+		return implode($separator, $ret);
 	}
 
 }

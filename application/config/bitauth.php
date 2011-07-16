@@ -81,13 +81,29 @@ $config['pwd_complexity_chars'] = array(
 );
 
 /**
+ * Number of invalid logins before account is locked
+ * Default: 3
+ */
+$config['invalid_logins'] = 3;
+
+/**
+ * Number of minutes before a locked account is unlocked
+ * This is also the amount of time that will lock an account
+ * if the set number of invalid logins is reached
+ * (eg: 3 invalid logins within 10 minutes will lock the account for 10 minutes)
+ * Default: 10
+ */
+$config['lockout_time'] = 10;
+
+/**
  * Tables used by BitAuth
  */
 $config['table'] = array(
-	'users'		=> 'bitauth_users',
-	'data'		=> 'bitauth_userdata',
-	'groups'	=> 'bitauth_groups',
-	'assoc'		=> 'bitauth_assoc'
+	'users'		=> 'bitauth_users',		// Required user information (username, password, etc)
+	'data'		=> 'bitauth_userdata',	// Optional user information (profile)
+	'groups'	=> 'bitauth_groups',	// Groups
+	'assoc'		=> 'bitauth_assoc',		// Users -> Groups associations
+	'logins'	=> 'bitauth_logins'		// Record of all logins
 );
 
 /**

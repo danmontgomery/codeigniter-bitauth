@@ -55,3 +55,4 @@ $lang['bitauth_add_group_failed']	= 'Adding group failed, please notify an admin
 $lang['bitauth_edit_group_datatype']= '$data must be an array or an object in Bitauth::update_group()';
 $lang['bitauth_edit_group_failed']	= 'Updating group failed, please notify an administrator.';
 $lang['bitauth_del_group_failed']	= 'Deleting group failed, please notify an administrator.';
+$lang['bitauth_lang_not_found']		= '(No language entry for "%s" found!)';

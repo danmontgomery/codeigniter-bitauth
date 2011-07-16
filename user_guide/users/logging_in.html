@@ -67,9 +67,13 @@ Logging In/Logging Out
     redirect('path/to/login_form');
 }</pre>
 
-<h2>$this->bitauth->login(<dfn>$username</dfn>, <dfn>$password</dfn>, <dfn>$remember</dfn> = <var>FALSE</var>)</h2>
+<h2>$this->bitauth->login(<dfn>$username</dfn>, <dfn>$password</dfn>, <dfn>$remember</dfn> = <var>FALSE</var>, <dfn>$extra</dfn> = <var>array()</var>)</h2>
 <p>Tries to authenticate the user, and sets the "Remember Me" token if appropriate. Returns <var>FALSE</var> and sets an error message retrieved with <a href="../general/utility.html">get_error()</a> if authentication fails. The following code is from the example that comes with BitAuth:</p>
-<pre>if($this->bitauth->login(<dfn>$this->input->post('username')</dfn>, <dfn>$this->input->post('password')</dfn>, <dfn>$this->input->post('remember_me')</dfn>))
+<pre><dfn>$username</dfn> = $this->input->post('username');
+<dfn>$password</dfn> = $this->input->post('password');
+<dfn>$remember_me</dfn> = $this->input->post('remember_me');
+
+if($this->bitauth->login(<dfn>$username</dfn>, <dfn>$password</dfn>, <dfn>$remember_me</dfn>))
 {
     // Redirect
     if($redir = $this->session->userdata('redir'))
@@ -87,6 +91,37 @@ else
 	with the exception of the <var>password</var>:</p>
 <pre>echo $this->bitauth->username;</pre>
 <p>For information on all of the available fields, see <a href="./fetching.html">Fetching Users</a>.</p>
+
+<h3>Requiring Additional Login Fields</h3>
+<p>Username is <strong>always</strong> required. You can, however, add any number of additional fields which will be checked at login. This is a 2-step process. First, you must tell BitAuth to expect the field(s):</p>
+<pre>$this->bitauth->add_login_field('email');</pre>
+<p>Once this is done, you simply have to pass the data to login() as an associative array. So, we would update our earlier example:</p>
+<pre><dfn>$username</dfn> = $this->input->post('username');
+<dfn>$password</dfn> = $this->input->post('password');
+<dfn>$remember_me</dfn> = $this->input->post('remember_me');
+<dfn>$extra</dfn> = array(<var>'email'</var> => $this->input->post('email'));
+
+$this->bitauth->add_login_field('email');
+
+if($this->bitauth->login(<dfn>$username</dfn>, <dfn>$password</dfn>, <dfn>$remember_me</dfn>, <dfn>$extra</dfn>))
+{
+    // Redirect
+    if($redir = $this->session->userdata('redir'))
+    {
+        $this->session->unset_userdata('redir');
+    }
+
+    redirect($redir ? $redir : 'bitauth_example');
+}
+else
+{
+    $data['error'] = $this->bitauth->get_error();
+}</pre>
+<p>In order to get an error message for these fields if they fail validation, you must add a line to the language file, <var>bitauth_invalid_{field}</var> (ie, bitauth_invalid_email).</p>
+<pre>$lang['bitauth_invalid_email'] = 'Email does not match this username';</pre>
+<h3>Logging in with something besides username</h3>
+<p>To login with something <em>besides</em> username; to use email as a username, for example, simply change the <var>bitauth_username</var> line in the language file to whatever label you like,
+	and setup the form_validation for your login form appropriately.</p>
 
 <h2>$this->bitauth->login_from_token()</h2>
 <p>If a valid "Remember Me" token is found, but not an active login, BitAuth will try to login from that token. If the login is invalid, the token is destroyed. This can be seen in BitAuth's __construct():</p>
