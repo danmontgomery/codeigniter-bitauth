@@ -17,6 +17,7 @@ $lang['bitauth_pwd_special']		= 'Special Characters';
  */
 $lang['bitauth_login_failed']		= 'Invalid %s or Password';
 $lang['bitauth_user_inactive']		= 'You must activate this account before you can login.';
+$lang['bitauth_user_locked_out']	= 'This account has been locked out.';
 
 /**
  * User Validation Error Messages

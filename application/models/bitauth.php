@@ -25,6 +25,8 @@ class Bitauth extends CI_Model
 	public $_pwd_complexity_chars;
 	public $_error_delim_prefix = '<p>';
 	public $_error_delim_suffix = '</p>';
+	public $_invalid_logins;
+	public $_lockout_time;
 	public $_date_format;
 
 	private $_all_permissions;
@@ -32,8 +34,7 @@ class Bitauth extends CI_Model
 	// IF YOU CHANGE THE STRUCTURE OF THE `users` TABLE, THAT CHANGE MUST BE REFLECTED HERE
 	private $_data_fields = array(
 		'username','password','password_last_set','password_never_expires','remember_me',
-		'activation_code','active','forgot_code','forgot_generated','enabled','last_login','last_login_ip',
-		'locked_out','locked_out_at'
+		'activation_code','active','forgot_code','forgot_generated','enabled','last_login','last_login_ip'
 	);
 
 	public function __construct()
@@ -114,10 +115,17 @@ class Bitauth extends CI_Model
 
 		if($user !== FALSE)
 		{
+			if($this->locked_out($user->user_id))
+			{
+				$this->set_error(lang('bitauth_user_locked_out'));
+				return FALSE;
+			}
+
 			if($this->phpass->CheckPassword($password, $user->password) || ($password === NULL && $user->remember_me == $token))
 			{
 				if( ! empty($this->_login_fields) && ! $this->check_login_fields($user, $extra))
 				{
+					$this->log_attempt($user->user_id, FALSE);
 					return FALSE;
 				}
 
@@ -148,8 +156,15 @@ class Bitauth extends CI_Model
 				// Update last login timestamp and IP
 				$this->update_user($user->user_id, $data);
 
+				$this->log_attempt($user->user_id, TRUE);
 				return TRUE;
 			}
+
+			$this->log_attempt($user->user_id, FALSE);
+		}
+		else
+		{
+			$this->log_attempt(FALSE, FALSE);
 		}
 
 		$this->set_error(sprintf(lang('bitauth_login_failed'), lang('bitauth_username')));
@@ -238,14 +253,41 @@ class Bitauth extends CI_Model
 	}
 
 	/**
+	 * Bitauth::locked_out()
+	 *
+	 */
+	public function locked_out($user_id)
+	{
+		// If invalid_logins is disabled, can't be locked out
+		if($this->_invalid_logins == 0)
+		{
+			return FALSE;
+		}
+
+		$query = $this->db
+			->where('time >=', date($this->_date_format, strtotime($this->_lockout_time.' minutes ago')))
+			->where('ip_address', ip2long($_SERVER['REMOTE_ADDR']))
+			->where('success', 0)
+			->get($this->_table['logins']);
+
+		if($query && $query->num_rows() >= $this->_invalid_logins)
+		{
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
+	/**
 	 * Bitauth::log_attempt()
 	 *
 	 */
-	public function log_attempt($ip, $user_id = 0)
+	public function log_attempt($user_id, $success = 0)
 	{
 		$data = array(
-			'ip_address' => ip2long($ip),
-			'user_id' = $user_id,
+			'ip_address' => ip2long($_SERVER['REMOTE_ADDR']),
+			'user_id' => $user_id,
+			'success' => $success,
 			'time' => date($this->_date_format, time())
 		);
 
@@ -333,10 +375,7 @@ class Bitauth extends CI_Model
 
 		$this->input->set_cookie($cookie);
 
-		$this->db
-			->set('remember_me', $username."\n".$session_id)
-			->where('user_id', $user_id)
-			->update($this->_table['users']);
+		return $this->update_user($user_id, array('remember_me' => $username."\n".$session_id));
 	}
 
 	/**
