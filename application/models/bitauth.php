@@ -33,8 +33,8 @@ class Bitauth extends CI_Model
 	private $_error;
 	// IF YOU CHANGE THE STRUCTURE OF THE `users` TABLE, THAT CHANGE MUST BE REFLECTED HERE
 	private $_data_fields = array(
-		'username','password','password_last_set','password_never_expires','remember_me',
-		'activation_code','active','forgot_code','forgot_generated','enabled','last_login','last_login_ip'
+		'username','password','password_last_set','password_never_expires','remember_me', 'activation_code',
+		'active','forgot_code','forgot_generated','enabled','last_login','last_login_ip'
 	);
 
 	public function __construct()
@@ -51,6 +51,7 @@ class Bitauth extends CI_Model
 		}
 
 		$this->load->database();
+		$this->load->library('encrypt');
 		$this->load->library('session');
 		$this->load->config('bitauth', TRUE);
 
@@ -131,7 +132,15 @@ class Bitauth extends CI_Model
 
 				if( ! $user->active)
 				{
+					$this->log_attempt($user->user_id, FALSE);
 					$this->set_error(lang('bitauth_user_inactive'));
+					return FALSE;
+				}
+
+				if($this->password_is_expired($user))
+				{
+					$this->log_attempt($user->user_id, FALSE);
+					$this->set_error(lang('bitauth_pwd_expired'));
 					return FALSE;
 				}
 
@@ -143,7 +152,7 @@ class Bitauth extends CI_Model
 				}
 
 				$data = array(
-					'last_login' => date($this->_date_format, time()),
+					'last_login' => $this->timestamp(),
 					'last_login_ip' => ip2long($_SERVER['REMOTE_ADDR'])
 				);
 
@@ -249,6 +258,16 @@ class Bitauth extends CI_Model
 	 */
 	public function add_login_field($field)
 	{
+		if(is_array($field))
+		{
+			foreach($field as $_field)
+			{
+				$this->add_login_field($_field);
+			}
+
+			return;
+		}
+
 		$this->_login_fields[] = $field;
 	}
 
@@ -265,7 +284,7 @@ class Bitauth extends CI_Model
 		}
 
 		$query = $this->db
-			->where('time >=', date($this->_date_format, strtotime($this->_lockout_time.' minutes ago')))
+			->where('time >=', $this->timestamp(strtotime($this->_lockout_time.' minutes ago')))
 			->where('ip_address', ip2long($_SERVER['REMOTE_ADDR']))
 			->where('success', 0)
 			->get($this->_table['logins']);
@@ -288,7 +307,7 @@ class Bitauth extends CI_Model
 			'ip_address' => ip2long($_SERVER['REMOTE_ADDR']),
 			'user_id' => $user_id,
 			'success' => $success,
-			'time' => date($this->_date_format, time())
+			'time' => $this->timestamp()
 		);
 
 		return $this->db->insert($this->_table['logins'], $data);
@@ -461,7 +480,7 @@ class Bitauth extends CI_Model
 		}
 
 		$data['password'] = $this->hash_password($data['password']);
-		$data['password_last_set'] = date($this->_date_format, time());
+		$data['password_last_set'] = $this->timestamp();
 
 		$this->db->trans_start();
 
@@ -678,6 +697,12 @@ class Bitauth extends CI_Model
 			return FALSE;
 		}
 
+		if($this->user_id == $id)
+		{
+			$user = $this->get_user_by_id($id);
+			$this->set_session_values($user);
+		}
+
 		$this->db->trans_commit();
 		return TRUE;
 	}
@@ -743,7 +768,7 @@ class Bitauth extends CI_Model
 		if($user = $this->get_user_by_id($user_id))
 		{
 			$user->forgot_code = $this->generate_code();
-			$user->forgot_generated = date($this->_date_format, time());
+			$user->forgot_generated = $this->timestamp();
 
 			return $this->update_user($user_id, $user);
 		}
@@ -761,7 +786,7 @@ class Bitauth extends CI_Model
 
 		$data = array(
 			'password' => $new_password,
-			'password_last_set' => date($this->_date_format, time())
+			'password_last_set' => $this->timestamp()
 		);
 
 		if($this->update_user($user_id, $data))
@@ -799,14 +824,21 @@ class Bitauth extends CI_Model
 
 		$permissions = gmp_init(0);
 
-		if(isset($data['permissions']) && is_array($data['permissions']))
+		if(isset($data['permissions']))
 		{
-			foreach($data['permissions'] as $slug)
+			if(is_array($data['permissions']))
 			{
-				if(($index = $this->get_perm($slug)) !== FALSE)
+				foreach($data['permissions'] as $slug)
 				{
-					gmp_setbit($permissions, $index);
+					if(($index = $this->get_perm($slug)) !== FALSE)
+					{
+						gmp_setbit($permissions, $index);
+					}
 				}
+			}
+			else if(is_numeric($data['permissions']))
+			{
+				$permissions = gmp_init($data['permissions']);
 			}
 		}
 
@@ -882,11 +914,15 @@ class Bitauth extends CI_Model
 			$mask = $this->permissions;
 		}
 
+		$mask = $this->encrypt->decode($mask);
+
+		// No point checking, user doesn't have permission
 		if($mask == 0)
 		{
 			return FALSE;
 		}
 
+		// Make sure it's a valid slug, otherwise don't give permission, even to administrators
 		if(($index = $this->get_perm($slug)) !== FALSE)
 		{
 			if($slug != $this->_admin_permission && $this->has_perm($this->_admin_permission, $mask))
@@ -899,6 +935,8 @@ class Bitauth extends CI_Model
 
 			return gmp_strval(gmp_and($mask, $check)) === gmp_strval($check);
 		}
+
+		return FALSE;
 	}
 
 	/**
@@ -1004,16 +1042,20 @@ class Bitauth extends CI_Model
 	 * Bitauth::password_almost_expired()
 	 *
 	 */
-	public function password_almost_expired($user_id = NULL)
+	public function password_almost_expired($user = NULL)
 	{
-		if($user_id === NULL)
+		if($user === NULL)
 		{
 			$user = $this;
 		}
-		else
+
+		if( ! is_array($user) && ! is_object($user))
 		{
-			$user = $this->get_user_by_id($user_id);
+			$this->set_error(lang('bitauth_expired_datatype'));
+			return TRUE;
 		}
+
+		$user = (object)$user;
 
 		if($this->_pwd_max_age == 0 || $user->password_never_expires == 1)
 		{
@@ -1027,16 +1069,20 @@ class Bitauth extends CI_Model
 	 * Bitauth::password_is_expired()
 	 *
 	 */
-	public function password_is_expired($user_id = NULL)
+	public function password_is_expired($user = NULL)
 	{
-		if($user_id === NULL)
+		if($user === NULL)
 		{
 			$user = $this;
 		}
-		else
+
+		if( ! is_array($user) && ! is_object($user))
 		{
-			$user = $this->get_user_by_id($user_id);
+			$this->set_error(lang('bitauth_expiring_datatype'));
+			return TRUE;
 		}
+
+		$user = (object)$user;
 
 		if($this->_pwd_max_age == 0 || $user->password_never_expires == 1)
 		{
@@ -1076,6 +1122,7 @@ class Bitauth extends CI_Model
 			{
 				$row->groups = explode('|', $row->groups);
 				$row->last_login_ip = long2ip($row->last_login_ip);
+				$row->permissions = $this->encrypt->encode($row->permissions);
 
 				$ret[] = $row;
 			}
@@ -1139,6 +1186,7 @@ class Bitauth extends CI_Model
 			foreach($result as $row)
 			{
 				$row->members = explode('|', $row->members);
+				$row->permissions = $this->encrypt->encode($row->permissions);
 				$ret[] = $row;
 			}
 
@@ -1259,6 +1307,23 @@ class Bitauth extends CI_Model
 		}
 
 		return implode($separator, $ret);
+	}
+
+	/**
+	 * Bitauth::timestamp()
+	 *
+	 */
+	public function timestamp($time = NULL)
+	{
+		if($time === NULL)
+			$time = time();
+
+		if($this->config->item('time_reference') == 'local')
+		{
+			return date($this->_date_format, $time);
+		}
+
+		return gmdate($this->_date_format, $time);
 	}
 
 }

@@ -119,6 +119,8 @@ else
 }</pre>
 <p>In order to get an error message for these fields if they fail validation, you must add a line to the language file, <var>bitauth_invalid_{field}</var> (ie, bitauth_invalid_email).</p>
 <pre>$lang['bitauth_invalid_email'] = 'Email does not match this username';</pre>
+<p>This function also accepts an array for multiple fields:</p>
+<pre>$this->bitauth->add_login_field(array(<var>'email'</var>, <var>'pin'</var>));</pre>
 <h3>Logging in with something besides username</h3>
 <p>To login with something <em>besides</em> username; to use email as a username, for example, simply change the <var>bitauth_username</var> line in the language file to whatever label you like,
 	and setup the form_validation for your login form appropriately.</p>
@@ -140,12 +142,12 @@ else if($this->input->cookie($this->_remember_token_name))
 <h2>$this->bitauth->delete_remember_token()</h2>
 <p>Called by <dfn>$this->bitauth->logout()</dfn>, deletes the "Remember Me" token and updates the <var>users</var> table as described above.</p>
 
-<h2>$this->bitauth->password_almost_expired(<dfn>$user_id</dfn> = <var>NULL</var>)</h2>
-<p>Returns <var>TRUE</var> if the user is within <a href="../general/config.html">pwd_max_age</a> days of the maximum password age config setting. If no <dfn>$user_id</dfn>
+<h2>$this->bitauth->password_almost_expired(<dfn>$user</dfn> = <var>NULL</var>)</h2>
+<p>Returns <var>TRUE</var> if the user is within <a href="../general/config.html">pwd_max_age</a> days of the maximum password age config setting. If no <dfn>$user</dfn>
 	is given, the currently logged in user is assumed.</p>
 
-<h2>$this->bitauth->password_is_expired(<dfn>$user_id</dfn> = <var>NULL</var>)</h2>
-<p>Returns <var>TRUE</var> if the user's password is expired. If no <dfn>$user_id</dfn> is given, the currently logged in user is assumed.</p>
+<h2>$this->bitauth->password_is_expired(<dfn>$user</dfn> = <var>NULL</var>)</h2>
+<p>Returns <var>TRUE</var> if the user's password is expired. If no <dfn>$user</dfn> is given, the currently logged in user is assumed.</p>
 
 </div>
 <!-- END CONTENT -->

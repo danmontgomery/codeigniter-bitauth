@@ -18,6 +18,7 @@ $lang['bitauth_pwd_special']		= 'Special Characters';
 $lang['bitauth_login_failed']		= 'Invalid %s or Password';
 $lang['bitauth_user_inactive']		= 'You must activate this account before you can login.';
 $lang['bitauth_user_locked_out']	= 'This account has been locked out.';
+$lang['bitauth_pwd_expired']		= 'Your password has expired.';
 
 /**
  * User Validation Error Messages
@@ -43,6 +44,8 @@ $lang['bitauth_data_error']			= 'You can\'t overwrite default BitAuth properties
 $lang['bitauth_enable_gmp']			= 'You must enable php_gmp to use Bitauth.';
 $lang['bitauth_user_not_found']		= 'User not found: %d';
 $lang['bitauth_activate_failed']	= 'Unable to activate user with this activation code.';
+$lang['bitauth_expired_datatype']	= '$user must be an array or an object in Bitauth::password_is_expired()';
+$lang['bitauth_expiring_datatype']	= '$user must be an array or an object in Bitauth::password_almost_expired()';
 $lang['bitauth_add_user_datatype']	= '$data must be an array or an object in Bitauth::add_user()';
 $lang['bitauth_add_user_failed']	= 'Adding user failed, please notify an administrator.';
 $lang['bitauth_code_not_found']		= 'Activation Code Not Found.';

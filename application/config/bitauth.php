@@ -39,8 +39,7 @@ $config['pwd_max_age'] = 90;
 
 /**
  * Number of days before password expiration to notify users their
- * password is about to expire. They will be redirected to a form
- * to change password every time they login until password is changed.
+ * password is about to expire.
  * Default: 7
  */
 $config['pwd_age_notification'] = 7;
@@ -63,8 +62,8 @@ $config['pwd_max_length'] = 20;
  * Default: 1, 1, 0
  */
 $config['pwd_complexity'] = array(
-	'uppercase' => 0,
-	'number' => 0,
+	'uppercase' => 1,
+	'number' => 1,
 	'special' => 0
 );
 
@@ -88,9 +87,6 @@ $config['invalid_logins'] = 3;
 
 /**
  * Number of minutes before a locked account is unlocked
- * This is also the amount of time that will lock an account
- * if the set number of invalid logins is reached
- * (eg: 3 invalid logins within 10 minutes will lock the account for 10 minutes)
  * Default: 10
  */
 $config['lockout_time'] = 10;
@@ -143,12 +139,10 @@ $config['permissions'] = array(
  * ANY USERS IN GROUPS GIVEN THIS PERMISSION WILL HAVE FULL ACCESS
  */
 	'is_admin'		=> 'User is an Administrator',
-
 /**
  * Add as many permissions slugs here as you like.
  * Follow the format:
  * 'permission_slug' => 'Permission Description',
  */
-	'can_edit'		=> 'Can Add/Edit Users & Groups (Sample)',
-	'can_change_pw'	=> 'Can Change User Passwords (Sample)'
+
 );
