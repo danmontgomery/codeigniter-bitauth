@@ -4,12 +4,58 @@
 <head>
 	<style type="text/css">
 		body { margin: 0; padding: 0; font-size: 10pt; font-family: Verdana, Arial, sans-serif; }
-		form { width: 400px; margin: 60px auto 0 auto; padding: 10px; border: 1px solid #666; }
-		label, input[type=text], input[type=password] { display: block; width: 100%; }
+		#bottom { width: 600px; padding: 10px; margin: 0 auto; }
+		#table { width: 600px; margin: 60px auto 0 auto; border-left: 1px solid #666; border-bottom: 1px solid #666; }
+		#table td, #table th { border: 1px solid #666; border-left: 0; border-bottom: 0; padding: 4px; text-align: left; vertical-align: top; }
+		#table caption { font-size: 1.4em; font-weight: bold; }
 	</style>
 	<title>BitAuth: Users</title>
 </head>
 <body>
-    <!-- Insert your content here -->
+	<?php
+
+		echo '<table border="0" cellspacing="0" cellpadding="0" id="table">';
+		echo '<caption>BitAuth Example</caption>';
+		echo '<tr><th width="1">ID</th><th>Username</th><th>Full Name</th><th>Actions</th></tr>';
+		foreach($users as $_user)
+		{
+			$actions = '';
+			if($bitauth->has_perm('admin'))
+			{
+				$actions = anchor('example/edit_user/'.$_user->user_id, 'Edit User').'<br/>';
+				if($_user->enabled)
+				{
+					$actions .= anchor('example/disable/'.$_user->user_id, 'Disable User');
+				}
+				else
+				{
+					$actions .= anchor('example/enable/'.$_user->user_id, 'Enable User');
+				}
+
+				if( ! $_user->active)
+				{
+					$actions .= '<br/>'.anchor('example/activate/'.$_user->activation_code, 'Activate User');
+				}
+
+			}
+
+			echo '<tr>'.
+				'<td>'.$_user->user_id.'</td>'.
+				'<td>'.$_user->username.'</td>'.
+				'<td>'.$_user->fullname.'</td>'.
+				'<td>'.$actions.'</td>'.
+			'</tr>';
+		}
+		echo '</table>';
+		echo '<div id="bottom">';
+		echo anchor('example/logout', 'Logout', 'style="float: right;"');
+		echo anchor('example/groups', 'View Groups');
+		if($bitauth->is_admin())
+		{
+			echo '<br/>'.anchor('example/add_user', 'Add User');
+		}
+		echo '</div>';
+
+	?>
 </body>
 </html>

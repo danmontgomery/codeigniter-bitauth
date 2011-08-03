@@ -6,7 +6,9 @@
 		body { margin: 0; padding: 0; font-size: 10pt; font-family: Verdana, Arial, sans-serif; }
 		form { width: 400px; margin: 60px auto 0 auto; padding: 10px; border: 1px solid #666; }
 		label, input[type=text], input[type=password] { display: block; width: 100%; }
+		input { margin-bottom: 8px; }
 		#bottom { width: 400px; padding: 10px; margin: 0 auto; }
+		.error { color: #940D0A; font-weight: bold; }
 	</style>
 	<title>BitAuth: Login</title>
 </head>
@@ -19,6 +21,7 @@
 	echo form_password('password');
 	echo form_label(form_checkbox('remember_me').' Remember Me', 'remember_me');
 	echo form_submit('login','Login');
+	echo ( ! empty($error) ? $error : '' );
 	echo form_close();
 	echo '<div id="bottom">Username: <strong>admin</strong><br/>Password: <strong>admin</strong></div>';
 ?>

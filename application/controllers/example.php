@@ -34,10 +34,22 @@ class Example extends CI_Controller
 			redirect('example/login');
 		}
 
-		echo date('Y-m-d H:i:s', time()).'<br/>';
-		echo gmdate('Y-m-d H:i:s', time());
+		$this->load->view('example/users', array('bitauth' => $this->bitauth, 'users' => $this->bitauth->get_users()));
+	}
 
-		$this->load->view('example/users', array('user' => $this->bitauth));
+	/**
+	 * Example::groups()
+	 *
+	 */
+	public function groups()
+	{
+		if( ! $this->bitauth->logged_in())
+		{
+			$this->session->set_userdata('redir', 'example/groups');
+			redirect('example/login');
+		}
+
+		$this->load->view('example/groups', array('bitauth' => $this->bitauth, 'groups' => $this->bitauth->get_groups()));
 	}
 
 	/**
@@ -80,6 +92,7 @@ class Example extends CI_Controller
 
 		$this->load->view('example/login', $data);
 	}
+
 
 	/**
 	 * Bitauth_example::logout()

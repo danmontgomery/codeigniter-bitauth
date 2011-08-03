@@ -3,10 +3,12 @@
 /**
  * BitAuth
  *
- * Group based bitwise permissions system
+ * Authentication and Permissions System
  *
  * @author Dan Montgomery <dan@dmontgomery.net>
  * @license DBAD <http://dbad-license.org/license>
+ * @link https://github.com/danmontgomery/codeigniter-bitauth
+ * @link http://dmontgomery.net/bitauth
  */
 class Bitauth extends CI_Model
 {
@@ -31,6 +33,7 @@ class Bitauth extends CI_Model
 
 	private $_all_permissions;
 	private $_error;
+
 	// IF YOU CHANGE THE STRUCTURE OF THE `users` TABLE, THAT CHANGE MUST BE REFLECTED HERE
 	private $_data_fields = array(
 		'username','password','password_last_set','password_never_expires','remember_me', 'activation_code',
@@ -112,16 +115,16 @@ class Bitauth extends CI_Model
 			return FALSE;
 		}
 
+		if($this->locked_out())
+		{
+			$this->set_error(lang('bitauth_user_locked_out'));
+			return FALSE;
+		}
+
 		$user = $this->get_user_by_username($username);
 
 		if($user !== FALSE)
 		{
-			if($this->locked_out($user->user_id))
-			{
-				$this->set_error(lang('bitauth_user_locked_out'));
-				return FALSE;
-			}
-
 			if($this->phpass->CheckPassword($password, $user->password) || ($password === NULL && $user->remember_me == $token))
 			{
 				if( ! empty($this->_login_fields) && ! $this->check_login_fields($user, $extra))
@@ -275,7 +278,7 @@ class Bitauth extends CI_Model
 	 * Bitauth::locked_out()
 	 *
 	 */
-	public function locked_out($user_id)
+	public function locked_out()
 	{
 		// If invalid_logins is disabled, can't be locked out
 		if($this->_invalid_logins == 0)
@@ -1062,7 +1065,7 @@ class Bitauth extends CI_Model
 			return FALSE;
 		}
 
-		return (bool)(time() > ( strtotime($user->password_last_set) + (($this->_pwd_max_age - $this->_pwd_age_notification) * 86400)));
+		return (bool)$this->timestamp(time(), 'U') > ( strtotime($user->password_last_set) + (($this->_pwd_max_age - $this->_pwd_age_notification) * 86400));
 	}
 
 	/**
@@ -1089,7 +1092,7 @@ class Bitauth extends CI_Model
 			return FALSE;
 		}
 
-		return (bool)(time() > ( strtotime($user->password_last_set) + ($this->_pwd_max_age * 86400) ));
+		return (bool)$this->timestamp(time(), 'U') > ( strtotime($user->password_last_set) + ($this->_pwd_max_age * 86400) );
 	}
 
 	/**
@@ -1313,17 +1316,23 @@ class Bitauth extends CI_Model
 	 * Bitauth::timestamp()
 	 *
 	 */
-	public function timestamp($time = NULL)
+	public function timestamp($time = NULL, $format = NULL)
 	{
 		if($time === NULL)
+		{
 			$time = time();
+		}
+		if($format === NULL)
+		{
+			$format = $this->_date_format;
+		}
 
 		if($this->config->item('time_reference') == 'local')
 		{
-			return date($this->_date_format, $time);
+			return date($format, $time);
 		}
 
-		return gmdate($this->_date_format, $time);
+		return gmdate($format, $time);
 	}
 
 }

@@ -7,7 +7,8 @@
 $config['require_user_activation'] = TRUE;
 
 /**
- * Default group users are added to when they first register (if one isn't specified)
+ * Default group_id users are added to when they first register (if one isn't
+ * specified)
  * Default: 2
  */
 $config['default_group_id'] = 2;
@@ -26,7 +27,8 @@ $config['remember_token_name'] = 'rememberme';
 $config['remember_token_expires'] = 604800;
 
 /**
- * Does the "remember me" expiration time update every time the user revisits the site?
+ * Does the "remember me" expiration time update every time the user revisits
+ * the site?
  * Default: TRUE
  */
 $config['remember_token_updates'] = TRUE;
@@ -69,9 +71,8 @@ $config['pwd_complexity'] = array(
 
 /**
  * Which characters are included in each complexity check. Must be in
- * regex-friendly format. Using the Posix Collating Sequences should
- * make these language-independent, but are here in case you want to
- * change them.
+ * regex-friendly format. Using the Posix Collating Sequences should make these
+ * language-independent, but are here in case you want to change them.
  */
 $config['pwd_complexity_chars'] = array(
 	'uppercase' => '[[:upper:]]',
@@ -103,7 +104,8 @@ $config['table'] = array(
 );
 
 /**
- * Base-2 logarithm of the iteration count used for password stretching by Phpass
+ * Base-2 logarithm of the iteration count used for password stretching by
+ * Phpass
  * See: http://en.wikipedia.org/wiki/Key_strengthening
  * Default: 8
  */
@@ -112,17 +114,17 @@ $config['phpass_iterations'] = 8;
 /**
  * Require the hashes to be portable to older systems?
  * From: http://www.openwall.com/articles/PHP-Users-Passwords
- * Unless you force the use of "portable" hashes, phpass' preferred hashing method is
- * CRYPT_BLOWFISH, with a fallback to CRYPT_EXT_DES, and then a final fallback to the
- * "portable" hashes.
+ * Unless you force the use of "portable" hashes, phpass' preferred hashing
+ * method is CRYPT_BLOWFISH, with a fallback to CRYPT_EXT_DES, and then a final
+ * fallback to the "portable" hashes.
  * Default: FALSE
  */
 $config['phpass_portable'] = FALSE;
 
 /**
- * What format BitAuth stores the date as. By default, BitAuth uses DATETIME fields.
- * If you want to store date as a unix timestamp, you just need to change the columns
- * in the database, and change this line:
+ * What format BitAuth stores the date as. By default, BitAuth uses DATETIME
+ * fields. If you want to store date as a unix timestamp, you just need to
+ * change the columns in the database, and change this line:
  * $config['date_format'] = 'U';
  * See: http://php.net/manual/en/function.date.php
  */
@@ -138,7 +140,7 @@ $config['permissions'] = array(
  * THE FIRST PERMISSION IS ALWAYS THE ADMINISTRATOR PERMISSION
  * ANY USERS IN GROUPS GIVEN THIS PERMISSION WILL HAVE FULL ACCESS
  */
-	'is_admin'		=> 'User is an Administrator',
+	'admin'			=> 'User is an Administrator',
 /**
  * Add as many permissions slugs here as you like.
  * Follow the format:

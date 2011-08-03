@@ -4,12 +4,42 @@
 <head>
 	<style type="text/css">
 		body { margin: 0; padding: 0; font-size: 10pt; font-family: Verdana, Arial, sans-serif; }
-		form { width: 400px; margin: 60px auto 0 auto; padding: 10px; border: 1px solid #666; }
-		label, input[type=text], input[type=password] { display: block; width: 100%; }
+		#bottom { width: 600px; padding: 10px; margin: 0 auto; }
+		#table { width: 600px; margin: 60px auto 0 auto; border-left: 1px solid #666; border-bottom: 1px solid #666; }
+		#table td, #table th { border: 1px solid #666; border-left: 0; border-bottom: 0; padding: 4px; text-align: left; }
+		#table caption { font-size: 1.4em; font-weight: bold; }
 	</style>
-	<title>BitAuth: Groups</title>
+	<title>BitAuth: Users</title>
 </head>
 <body>
-    <!-- Insert your content here -->
+	<?php
+		echo '<table border="0" cellspacing="0" cellpadding="0" id="table">';
+		echo '<caption>BitAuth Example</caption>';
+		echo '<tr><th width="1">ID</th><th>Name</th><th>Description</th><th>Actions</th></tr>';
+		foreach($groups as $_group)
+		{
+			$actions = '';
+			if($bitauth->has_perm('admin'))
+			{
+				$actions = anchor('example/edit_group/'.$_group->group_id, 'Edit Group');
+			}
+
+			echo '<tr>'.
+				'<td>'.$_group->group_id.'</td>'.
+				'<td>'.$_group->name.'</td>'.
+				'<td>'.$_group->description.'</td>'.
+				'<td>'.$actions.'</td>'.
+			'</tr>';
+		}
+		echo '</table>';
+		echo '<div id="bottom">';
+		echo anchor('example/logout', 'Logout', 'style="float: right;"');
+		echo anchor('example', 'View Users');
+		if($bitauth->is_admin())
+		{
+			echo '<br/>'.anchor('example/add_group', 'Add Group');
+		}
+		echo '</div>';
+	?>
 </body>
 </html>
