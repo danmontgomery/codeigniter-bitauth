@@ -11,7 +11,7 @@ class Example extends CI_Controller
 	{
 		parent::__construct();
 
-		$this->load->model('bitauth');
+		$this->load->library('bitauth');
 
 		$this->load->helper('form');
 		$this->load->helper('url');

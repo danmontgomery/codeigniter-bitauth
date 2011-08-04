@@ -20,7 +20,7 @@
 		foreach($users as $_user)
 		{
 			$actions = '';
-			if($bitauth->has_perm('admin'))
+			if($bitauth->has_role('admin'))
 			{
 				$actions = anchor('example/edit_user/'.$_user->user_id, 'Edit User').'<br/>';
 				if($_user->enabled)

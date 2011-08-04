@@ -81,13 +81,20 @@ $config['pwd_complexity_chars'] = array(
 );
 
 /**
+ * Whether or not to log login attemps. If set to FALSE, users can no longer
+ * be locked out by invalid login attempts.
+ * Default: TRUE
+ */
+$config['log_logins'] = TRUE;
+
+/**
  * Number of invalid logins before account is locked
  * Default: 3
  */
 $config['invalid_logins'] = 3;
 
 /**
- * Number of minutes before a locked account is unlocked
+ * Number of minutes before a locked account is unlocked.
  * Default: 10
  */
 $config['lockout_time'] = 10;
@@ -131,20 +138,20 @@ $config['phpass_portable'] = FALSE;
 $config['date_format'] = 'Y-m-d H:i:s';
 
 /**
- * Your permissions slugs. These are how you call permissions checks
- * in your code. eg: if($this->bitauth->has_perm('example_perm_1'))
+ * Your roles. These are how you call permissions checks in your code.
+ * eg: if($this->bitauth->has_role('example_role'))
  */
-$config['permissions'] = array(
+$config['roles'] = array(
 
 /**
- * THE FIRST PERMISSION IS ALWAYS THE ADMINISTRATOR PERMISSION
- * ANY USERS IN GROUPS GIVEN THIS PERMISSION WILL HAVE FULL ACCESS
+ * THE FIRST ROLE IS ALWAYS THE ADMINISTRATOR ROLE
+ * ANY USERS IN GROUPS GIVEN THIS ROLE WILL HAVE FULL ACCESS
  */
 	'admin'			=> 'User is an Administrator',
 /**
- * Add as many permissions slugs here as you like.
+ * Add as many roles here as you like.
  * Follow the format:
- * 'permission_slug' => 'Permission Description',
+ * 'role_slug' => 'Role Description',
  */
 
 );

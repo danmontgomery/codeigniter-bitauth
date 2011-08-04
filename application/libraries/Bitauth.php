@@ -10,12 +10,12 @@
  * @link https://github.com/danmontgomery/codeigniter-bitauth
  * @link http://dmontgomery.net/bitauth
  */
-class Bitauth extends CI_Model
+class Bitauth
 {
 
 	public $_table;
 	public $_default_group_id;
-	public $_admin_permission;
+	public $_admin_role;
 	public $_remember_token_name;
 	public $_remember_token_expires;
 	public $_remember_token_updates;
@@ -27,11 +27,12 @@ class Bitauth extends CI_Model
 	public $_pwd_complexity_chars;
 	public $_error_delim_prefix = '<p>';
 	public $_error_delim_suffix = '</p>';
+	public $_log_logins;
 	public $_invalid_logins;
 	public $_lockout_time;
 	public $_date_format;
 
-	private $_all_permissions;
+	private $_all_roles;
 	private $_error;
 
 	// IF YOU CHANGE THE STRUCTURE OF THE `users` TABLE, THAT CHANGE MUST BE REFLECTED HERE
@@ -42,27 +43,7 @@ class Bitauth extends CI_Model
 
 	public function __construct()
 	{
-		parent::__construct();
-
-		$this->load->helper('language');
-		$this->lang->load('bitauth');
-
-		if( ! function_exists('gmp_init'))
-		{
-			log_message('error', lang('bitauth_enable_gmp'));
-			show_error(lang('bitauth_enable_gmp'));
-		}
-
-		$this->load->database();
-		$this->load->library('encrypt');
-		$this->load->library('session');
-		$this->load->config('bitauth', TRUE);
-
-		// Load Phpass library
-		$this->load->library('phpass', array(
-			'iteration_count_log2' => $this->config->item('phpass_iterations', 'bitauth'),
-			'portable_hashes' => $this->config->item('phpass_portable', 'bitauth')
-		));
+		$this->_assign_libraries();
 
 		$this->_table						= $this->config->item('table', 'bitauth');
 		$this->_default_group_id			= $this->config->item('default_group_id', 'bitauth');
@@ -76,15 +57,16 @@ class Bitauth extends CI_Model
 		$this->_pwd_max_length				= $this->config->item('pwd_max_length', 'bitauth');
 		$this->_pwd_complexity				= $this->config->item('pwd_complexity', 'bitauth');
 		$this->_pwd_complexity_chars		= $this->config->item('pwd_complexity_chars', 'bitauth');
+		$this->_log_logins					= $this->config->item('log_logins', 'bitauth');
 		$this->_invalid_logins				= $this->config->item('invalid_logins', 'bitauth');
 		$this->_lockout_time				= $this->config->item('lockout_time', 'bitauth');
 		$this->_date_format					= $this->config->item('date_format', 'bitauth');
 
-		$this->_all_permissions				= $this->config->item('permissions', 'bitauth');
+		$this->_all_roles					= $this->config->item('roles', 'bitauth');
 
-		// Grab the first permission on the list as the administrator permission
-		$slugs = array_keys($this->_all_permissions);
-		$this->_admin_permission = $slugs[0];
+		// Grab the first role on the list as the administrator role
+		$slugs = array_keys($this->_all_roles);
+		$this->_admin_role = $slugs[0];
 
 		// Specify any extra login fields
 		$this->_login_fields = array();
@@ -100,7 +82,6 @@ class Bitauth extends CI_Model
 
 		$this->set_error($this->session->flashdata('bitauth_error'), FALSE);
 		unset($slugs);
-
 	}
 
 	/**
@@ -194,7 +175,10 @@ class Bitauth extends CI_Model
 			$token = explode("\n", $token);
 			$username = $token[0];
 
-			if($this->login($username, NULL, (bool)$this->_remember_token_updates, FALSE, implode("\n", $token)))
+			var_dump($token);
+			exit();
+
+			if($this->login($username, NULL, (bool)$this->_remember_token_updates, FALSE, $token[1]))
 			{
 				return TRUE;
 			}
@@ -306,14 +290,20 @@ class Bitauth extends CI_Model
 	 */
 	public function log_attempt($user_id, $success = 0)
 	{
-		$data = array(
-			'ip_address' => ip2long($_SERVER['REMOTE_ADDR']),
-			'user_id' => $user_id,
-			'success' => $success,
-			'time' => $this->timestamp()
-		);
+		if($this->_log_logins == TRUE)
+		{
 
-		return $this->db->insert($this->_table['logins'], $data);
+			$data = array(
+				'ip_address' => ip2long($_SERVER['REMOTE_ADDR']),
+				'user_id' => $user_id,
+				'success' => $success,
+				'time' => $this->timestamp()
+			);
+
+			return $this->db->insert($this->_table['logins'], $data);
+		}
+
+		return TRUE;
 	}
 
 	/**
@@ -386,7 +376,6 @@ class Bitauth extends CI_Model
 		$session_id = sha1(mt_rand(0, PHP_INT_MAX).time());
 
 		$cookie = array(
-			'prefix' => $this->config->item('cookie_prefix'),
 			'name' => $this->_remember_token_name,
 			'value' => $username."\n".$session_id,
 			'expire' => $this->_remember_token_expires,
@@ -397,7 +386,7 @@ class Bitauth extends CI_Model
 
 		$this->input->set_cookie($cookie);
 
-		return $this->update_user($user_id, array('remember_me' => $username."\n".$session_id));
+		return $this->update_user($user_id, array('remember_me' => $session_id));
 	}
 
 	/**
@@ -414,10 +403,15 @@ class Bitauth extends CI_Model
 				'expire' => -86400
 			);
 
-			$this->db
-				->set('remember_me', '')
-				->where('remember_me', $this->input->cookie($this->_remember_token_name))
-				->update($this->_table['users']);
+			if($token = $this->input->cookie($this->_remember_token_name))
+			{
+				$token = explode("\n", $token);
+				$this->db
+					->set('remember_me', '')
+					->where('username', $token[0])
+					->where('remember_me', $token[1])
+					->update($this->_table['users']);
+			}
 
 			$this->input->set_cookie($cookie);
 		}
@@ -558,19 +552,19 @@ class Bitauth extends CI_Model
 			unset($data['members']);
 		}
 
-		$permissions = gmp_init(0);
-		if(isset($data['permissions']) && is_array($data['permissions']))
+		$roles = gmp_init(0);
+		if(isset($data['roles']) && is_array($data['roles']))
 		{
-			foreach($data['permissions'] as $slug)
+			foreach($data['roles'] as $slug)
 			{
-				if(($index = $this->get_perm($slug)) !== FALSE)
+				if(($index = $this->get_role($slug)) !== FALSE)
 				{
-					gmp_setbit($permissions, $index);
+					gmp_setbit($roles, $index);
 				}
 			}
 		}
 
-		$data['permissions'] = gmp_strval($permissions);
+		$data['roles'] = gmp_strval($roles);
 
 		$this->db->trans_start();
 
@@ -643,7 +637,7 @@ class Bitauth extends CI_Model
 		}
 
 		// Just in case
-		unset($data['user_id'], $data['permissions'], $data['id']);
+		unset($data['user_id'], $data['roles'], $data['id']);
 
 		if(isset($data['groups']))
 		{
@@ -825,27 +819,27 @@ class Bitauth extends CI_Model
 			unset($data['members']);
 		}
 
-		$permissions = gmp_init(0);
+		$roles = gmp_init(0);
 
-		if(isset($data['permissions']))
+		if(isset($data['roles']))
 		{
-			if(is_array($data['permissions']))
+			if(is_array($data['roles']))
 			{
-				foreach($data['permissions'] as $slug)
+				foreach($data['roles'] as $slug)
 				{
-					if(($index = $this->get_perm($slug)) !== FALSE)
+					if(($index = $this->get_role($slug)) !== FALSE)
 					{
-						gmp_setbit($permissions, $index);
+						gmp_setbit($roles, $index);
 					}
 				}
 			}
-			else if(is_numeric($data['permissions']))
+			else if(is_numeric($data['roles']))
 			{
-				$permissions = gmp_init($data['permissions']);
+				$roles = gmp_init($data['roles']);
 			}
 		}
 
-		$data['permissions'] = gmp_strval($permissions);
+		$data['roles'] = gmp_strval($roles);
 
 		$this->db->trans_start();
 
@@ -907,14 +901,14 @@ class Bitauth extends CI_Model
 	}
 
 	/**
-	 * Bitauth::has_perm()
+	 * Bitauth::has_role()
 	 *
 	 */
-	public function has_perm($slug, $mask = NULL)
+	public function has_role($slug, $mask = NULL)
 	{
 		if($mask === NULL)
 		{
-			$mask = $this->permissions;
+			$mask = $this->roles;
 		}
 
 		$mask = $this->encrypt->decode($mask);
@@ -926,9 +920,9 @@ class Bitauth extends CI_Model
 		}
 
 		// Make sure it's a valid slug, otherwise don't give permission, even to administrators
-		if(($index = $this->get_perm($slug)) !== FALSE)
+		if(($index = $this->get_role($slug)) !== FALSE)
 		{
-			if($slug != $this->_admin_permission && $this->has_perm($this->_admin_permission, $mask))
+			if($slug != $this->_admin_role && $this->has_role($this->_admin_role, $mask))
 			{
 				return TRUE;
 			}
@@ -948,25 +942,25 @@ class Bitauth extends CI_Model
 	 */
 	public function is_admin($mask = NULL)
 	{
-		return $this->has_perm($this->_admin_permission, $mask);
+		return $this->has_role($this->_admin_role, $mask);
 	}
 
 	/**
-	 * Bitauth::get_perm()
+	 * Bitauth::get_role()
 	 *
 	 */
-	public function get_perm($slug)
+	public function get_role($slug)
 	{
-		return array_search($slug, array_keys($this->_all_permissions));
+		return array_search($slug, array_keys($this->_all_roles));
 	}
 
 	/**
-	 * Bitauth::get_permissions()
+	 * Bitauth::get_roles()
 	 *
 	 */
-	public function get_permissions()
+	public function get_roles()
 	{
-		return $this->_all_permissions;
+		return $this->_all_roles;
 	}
 
 	/**
@@ -1110,7 +1104,7 @@ class Bitauth extends CI_Model
 			->select('users.*')
 			->select('userdata.*')
 			->select('GROUP_CONCAT(assoc.group_id SEPARATOR "|") AS groups')
-			->select('BIT_OR(groups.permissions) AS permissions')
+			->select('BIT_OR(groups.roles) AS roles')
 			->join($this->_table['data'].' userdata', 'userdata.user_id = users.user_id', 'left')
 			->join($this->_table['assoc'].' assoc', 'assoc.user_id = users.user_id', 'left')
 			->join($this->_table['groups'].' groups', 'groups.group_id = assoc.group_id', 'left')
@@ -1125,7 +1119,7 @@ class Bitauth extends CI_Model
 			{
 				$row->groups = explode('|', $row->groups);
 				$row->last_login_ip = long2ip($row->last_login_ip);
-				$row->permissions = $this->encrypt->encode($row->permissions);
+				$row->roles = $this->encrypt->encode($row->roles);
 
 				$ret[] = $row;
 			}
@@ -1189,7 +1183,7 @@ class Bitauth extends CI_Model
 			foreach($result as $row)
 			{
 				$row->members = explode('|', $row->members);
-				$row->permissions = $this->encrypt->encode($row->permissions);
+				$row->roles = $this->encrypt->encode($row->roles);
 				$ret[] = $row;
 			}
 
@@ -1334,5 +1328,47 @@ class Bitauth extends CI_Model
 
 		return gmdate($format, $time);
 	}
+
+	/**
+	 * Bitauth::_assign_libraries()
+	 *
+	 */
+	 public function _assign_libraries()
+	 {
+ 		if($CI =& get_instance())
+ 		{
+ 			$this->input	=& $CI->input;
+			$this->load		=& $CI->load;
+			$this->config	=& $CI->config;
+			$this->lang		=& $CI->lang;
+
+			$CI->load->library('session');
+			$this->session	=& $CI->session;
+
+			$CI->load->library('encrypt');
+			$this->encrypt	=& $CI->encrypt;
+
+			$this->load->database();
+			$this->db		=& $CI->db;
+
+			$this->load->helper('language');
+			$this->lang->load('bitauth');
+
+			if( ! function_exists('gmp_init'))
+			{
+				log_message('error', lang('bitauth_enable_gmp'));
+				show_error(lang('bitauth_enable_gmp'));
+			}
+
+			$this->load->config('bitauth', TRUE);
+
+			// Load Phpass library
+			$CI->load->library('phpass', array(
+				'iteration_count_log2' => $this->config->item('phpass_iterations', 'bitauth'),
+				'portable_hashes' => $this->config->item('phpass_portable', 'bitauth')
+			));
+			$this->phpass	=& $CI->phpass;
+		}
+	 }
 
 }

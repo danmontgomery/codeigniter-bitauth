@@ -19,7 +19,7 @@
 		foreach($groups as $_group)
 		{
 			$actions = '';
-			if($bitauth->has_perm('admin'))
+			if($bitauth->has_role('admin'))
 			{
 				$actions = anchor('example/edit_group/'.$_group->group_id, 'Edit Group');
 			}
