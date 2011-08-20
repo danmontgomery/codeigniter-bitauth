@@ -110,13 +110,12 @@ Fetching Users
 	<td class="td">Array of <var>group_id</var>s the user is a member of</td>
 </tr>
 <tr>
-	<td class="td"><strong>permissions</strong></td>
-	<td class="td">Numeric representation of the user's inherited permissions. <strong>You cannot set this value directly on the user.</strong></td>
+	<td class="td"><strong>roles</strong></td>
+	<td class="td">Numeric representation of the user's inherited roles. <strong>You cannot set this value directly on the user.</strong></td>
 </tr>
 
 </table>
-<p>Along with all of this information, any <a href="./customizing.html">custom user data</a> you may have is also returned. You can access and edit this information
-	exactly as you would any other user information.</p>
+<p>Along with all of this information, any <a href="./customizing.html">custom user data</a> you may have is also returned. You can access and edit this information exactly as you would any other user information.</p>
 
 <h2>$this->bitauth->get_users(<dfn>$include_disabled</dfn> = <var>FALSE</var>)</h2>
 <p>Returns all users. Each user object contains the information listed above. By default, any users with <dfn>enabled</dfn> = <var>0</var> will be <strong>excluded</strong>.
@@ -129,7 +128,7 @@ foreach($all_users as $user)
     echo $user->username.'&lt;br/&gt;';
 }</pre>
 
-<p>For information on checking a user's permissions, see <a href="../permissions/checking.html">Checking Permissions</a>.<br/>
+<p>For information on checking a user's roles, see <a href="../roles/checking.html">Checking Roles</a>.<br/>
 For information on customizing user data, see <a href="./customizing.html">Customizing User Data</a>.</p>
 
 <h2>$this->bitauth->get_user_by_id(<dfn>$user_id</dfn>, <dfn>$include_disabled</dfn> = <var>FALSE</var>)</h2>
@@ -147,6 +146,11 @@ else
 <h2>$this->bitauth->get_user_by_username(<dfn>$username</dfn>, <dfn>$include_disabled</dfn> = <var>FALSE</var>)</h2>
 <p>Returns an object with the same information as <dfn>get_users()</dfn> for one user, by username. <dfn>$username</dfn> is case-insensitive. Returns <var>FALSE</var> on failure.</p>
 
+<h2>$this->bitauth->get_user_by_activation_code(<dfn>$activation_code</dfn>)</h2>
+<p>Fetches a user by activation code, called by <a href='../general/utility.html'>activate()</a>.</p>
+
+<h2>$this->bitauth->get_user_by_forgot_code(<dfn>$forgot_code</dfn>)</h2>
+<p>Fetches a user by forgot password code. If the code has expired, it is removed and <var>FALSE</var> is returned.</p>
 </div>
 <!-- END CONTENT -->
 

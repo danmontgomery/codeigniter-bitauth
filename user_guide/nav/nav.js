@@ -33,11 +33,11 @@ function create_menu(basepath)
 			'<li><a href="'+base+'groups/assigning.html">Adding Members</a></li>' +
 		'</ul>' +
 		'</td><td class="td_sep" valign="top">' +
-		'<h3>Permissions</h3>' +
+		'<h3>Roles</h3>' +
 		'<ul>' +
-			'<li><a href="'+base+'permissions/creating.html">Creating Permissions</a></li>' +
-			'<li><a href="'+base+'permissions/setting.html">Setting Permissions</a></li>' +
-			'<li><a href="'+base+'permissions/checking.html">Checking Permissions</a></li>' +
+			'<li><a href="'+base+'roles/creating.html">Creating Roles</a></li>' +
+			'<li><a href="'+base+'roles/setting.html">Setting Roles</a></li>' +
+			'<li><a href="'+base+'roles/checking.html">Checking Roles</a></li>' +
 		'</ul>' +
 
 		'</td></tr></table>');

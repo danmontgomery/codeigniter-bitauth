@@ -3,7 +3,7 @@
 <head>
 
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>BitAuth User Guide : Creating Permissions</title>
+<title>BitAuth User Guide : Setting Roles</title>
 
 <style type='text/css' media='all'>@import url('../userguide.css');</style>
 <link rel='stylesheet' type='text/css' media='all' href='../userguide.css' />
@@ -44,7 +44,7 @@
 <td id="breadcrumb">
 <a href="http://dmontgomery.net/code/codeigniter-bitauth/">BitAuth</a> &nbsp;&#8250;&nbsp;
 <a href="../index.html">User Guide Home</a> &nbsp;&#8250;&nbsp;
-Creating Permissions
+Setting Roles
 </td>
 
 </tr>
@@ -55,37 +55,25 @@ Creating Permissions
 
 <!-- START CONTENT -->
 <div id="content">
-<h1>Creating Permissions</h1>
-<p>Permissions are created in the <a href="../general/config.html">configuration file</a>. What permissions you choose are completely up to you, BitAuth only requires one: <var>is_admin</var>.
-	The permissions section of the configuration file looks like this:</p>
-<pre>/**
- * Your permissions slugs. These are how you call permissions checks
- * in your code. eg: if($this->bitauth->has_perm('example_perm_1'))
- */
-$config['permissions'] = array(
+<h1>Setting Roles</h1>
+<p>Setting roles on a group is simple. All you need to do is set the <var>roles</var> attribute when adding or updating a group:</p>
+<h3>When Adding a Group</h3>
+<pre>$group = array(
+    'name'        => 'Test Group',
+    'description' => 'This is a test group.',
+    'roles'       => array(<var>'new_role_1'</var>, <var>'new_role_2'</var>)
+);
 
-/**
- * THE FIRST PERMISSION IS ALWAYS THE ADMINISTRATOR PERMISSION
- * ANY USERS IN GROUPS GIVEN THIS PERMISSION WILL HAVE FULL ACCESS
- */
-	'is_admin'		=> 'User is an Administrator',
-/**
- * Add as many permissions slugs here as you like.
- * Follow the format:
- * 'permission_slug' => 'Permission Description',
- */
+$this->bitauth->add_group($group);</pre>
+<p>The example included in the BitAuth download gives an example of how to do this easily with an HTML form.</p>
 
-);</pre>
+<h3>When Updating a Group</h3>
+<pre>$group = $this->bitauth->get_group_by_name(<var>'Test Group'</var>);
 
-<p>Creating permissions is as simple as adding new elements to this array:</p>
-<pre>'sample_perm'  => 'This is a sample permission',</pre>
+$group->roles = array(<var>'new_role_1'</var>, <var>'new_role_2'</var>);
+$this->bitauth->update_group($group->group_id, $group);</pre>
 
-<p>The <var>slug</var> is how you check that permission in your code. The <var>description</var> is how you describe that permission in human-readable language.</p>
-
-<p>You can add any number of permissions you like in this format, as long as the first (<var>is_admin</var>) remains at the top of the list.
-	You <em>can</em> change the slug and description of this permission, <strong>the first on the list will always be treated as the administrator
-	permission</strong>. No matter what you change the slug to be, you can always check for this permission with <a href="./checking.html">is_admin()</a>.</p>
-
+<p>Any changes you make to group roles are reflected in all members of that group the next time they log in.</p>
 </div>
 <!-- END CONTENT -->
 

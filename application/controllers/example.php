@@ -18,8 +18,6 @@ class Example extends CI_Controller
 
 		$this->load->library('form_validation');
 		$this->form_validation->set_error_delimiters('<div class="error">', '</div>');
-
-		$this->output->enable_profiler();
 	}
 
 	/**
@@ -231,10 +229,27 @@ class Example extends CI_Controller
 
 		if($this->input->post())
 		{
+			$this->form_validation->set_rules('name', 'Group Name', 'trim|required|bitauth_unique_group');
+			$this->form_validation->set_rules('description', 'Description', '');
+			$this->form_validation->set_rules('members[]', 'Members', '');
+			$this->form_validation->set_rules('roles[]', 'Roles', '');
+
+			if($this->form_validation->run() == TRUE)
+			{
+				unset($_POST['submit']);
+				$this->bitauth->add_group($this->input->post());
+				redirect('example/groups');
+			}
 
 		}
 
-		$this->load->view('example/add_group', array('roles' => $this->bitauth->get_roles(), 'users' => $this->bitauth->get_users()));
+		$users = array();
+		foreach($this->bitauth->get_users() as $_user)
+		{
+			$users[$_user->user_id] = $_user->fullname;
+		}
+
+		$this->load->view('example/add_group', array('bitauth' => $this->bitauth, 'roles' => $this->bitauth->get_roles(), 'users' => $users));
 	}
 
 	/**
@@ -254,7 +269,58 @@ class Example extends CI_Controller
 			$this->load->view('example/no_access');
 			return;
 		}
+
+		if($this->input->post())
+		{
+			$this->form_validation->set_rules('name', 'Group Name', 'trim|required|bitauth_unique_group['.$group_id.']');
+			$this->form_validation->set_rules('description', 'Description', '');
+			$this->form_validation->set_rules('members[]', 'Members', '');
+			$this->form_validation->set_rules('roles[]', 'Roles', '');
+
+			if($this->form_validation->run() == TRUE)
+			{
+				unset($_POST['submit']);
+				$this->bitauth->update_group($group_id, $this->input->post());
+				redirect('example/groups');
+			}
+
+		}
+
+		$users = array();
+		foreach($this->bitauth->get_users() as $_user)
+		{
+			$users[$_user->user_id] = $_user->fullname;
+		}
+
+		$group = $this->bitauth->get_group_by_id($group_id);
+
+		$role_list = array();
+		$roles = $this->bitauth->get_roles();
+		foreach($roles as $_slug => $_desc)
+		{
+			if($this->bitauth->has_role($_slug, $group->roles))
+			{
+				$role_list[] = $_slug;
+			}
+		}
+
+		$this->load->view('example/edit_group', array('bitauth' => $this->bitauth, 'roles' => $roles, 'group' => $group, 'group_roles' => $role_list, 'users' => $users));
 	}
+
+	/**
+	 * Example::activate()
+	 *
+	 */
+	 public function activate($activation_code)
+	 {
+	 	if($this->bitauth->activate($activation_code))
+	 	{
+	 		$this->load->view('example/activation_successful');
+	 		return;
+	 	}
+
+	 	$this->load->view('example/activation_failed');
+	 }
 
 	/**
 	 * Example::logout()

@@ -50,7 +50,7 @@ $config['pwd_age_notification'] = 7;
  * Required minimum length of passwords
  * Default: 8
  */
-$config['pwd_min_length'] = 4;
+$config['pwd_min_length'] = 8;
 
 /**
  * Required maximum length of passwords. Set to 0 to disable
@@ -61,12 +61,13 @@ $config['pwd_max_length'] = 20;
 /**
  * Optional password complexity options. Set a number for each to
  * require that many characters, or set to 0 to disable
- * Default: 1, 1, 0
+ * Default: 1, 1, 0, 0
  */
 $config['pwd_complexity'] = array(
-	'uppercase' => 0,
-	'number' => 0,
-	'special' => 0
+	'uppercase' => 1,
+	'number' => 1,
+	'special' => 0,
+	'spaces' => 0,
 );
 
 /**
@@ -77,8 +78,15 @@ $config['pwd_complexity'] = array(
 $config['pwd_complexity_chars'] = array(
 	'uppercase' => '[[:upper:]]',
 	'number' => '[[:digit:]]',
-	'special' => '[[:punct:]]'
+	'special' => '[[:punct:]]',
+	'spaces' => '\s'
 );
+
+/**
+ * Number of seconds a "forgot password" code is valid for
+ * Default: 3600
+ */
+$config['forgot_valid_for'] = 3600;
 
 /**
  * Whether or not to log login attemps. If set to FALSE, users can no longer
@@ -148,6 +156,7 @@ $config['date_format'] = 'Y-m-d H:i:s';
 /**
  * Your roles. These are how you call permissions checks in your code.
  * eg: if($this->bitauth->has_role('example_role'))
+ * DO NOT reorder these once they have been assigned.
  */
 $config['roles'] = array(
 
@@ -161,5 +170,5 @@ $config['roles'] = array(
  * Follow the format:
  * 'role_slug' => 'Role Description',
  */
-
+ 	
 );

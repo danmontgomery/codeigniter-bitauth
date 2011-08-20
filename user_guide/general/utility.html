@@ -62,11 +62,11 @@ Utility Functions
 <h2>$this->bitauth->set_password(<dfn>$user_id</dfn>, <dfn>$new_password</dfn>)</h2>
 <p>This will hash the <strong>plain text</strong> password passed to <dfn>$new_password</dfn>, and update the user along with the value for <var>password_last_set</var>.</p>
 
-<h2>$this->bitauth->get_perm(<dfn>$slug</dfn>)</h2>
-<p>This will return the bit offset for a permission based on the slug that is passed. This is a utility function used internally in BitAuth.</p>
+<h2>$this->bitauth->get_role(<dfn>$slug</dfn>)</h2>
+<p>This will return the bit offset for a role based on the slug that is passed. This is a utility function used internally in BitAuth.</p>
 
-<h2>$this->bitauth->get_permissions()</h2>
-<p>This returns an array of all permissions defined in the <a href="./config.html">configuration</a>. The array is exactly as it's defined, in the format:</p>
+<h2>$this->bitauth->get_roles()</h2>
+<p>This returns an array of all roles defined in the <a href="./config.html">configuration</a>. The array is exactly as it's defined, in the format:</p>
 <pre>array( 'slug' => 'description' );</pre>
 
 <h2>$this->bitauth->set_login_field(<dfn>$field</dfn>)</h2>
@@ -81,11 +81,17 @@ Utility Functions
 <p>Stores an error message in BitAuth. Currently, BitAuth only stores one message at a time. By default, this message will be saved to the session,
 	you can disable this by passing <var>FALSE</var> as the second parameter.</p>
 
-<h2>$this->bitauth->get_error()</h2>
-<p>Retrieves the message stored by <dfn>$this->bitauth->set_error()</dfn>. The message is wrapped with <dfn>$_error_delim_prefix</dfn> and <dfn>$_error_delim_suffix</dfn>.</p>
+<h2>$this->bitauth->get_error(<dfn>$incl_delim</dfn> = <var>TRUE</var>)</h2>
+<p>Retrieves the message stored by <dfn>$this->bitauth->set_error()</dfn>. The message is wrapped with <dfn>$_error_delim_prefix</dfn> and <dfn>$_error_delim_suffix</dfn>, unless passed <var>FALSE</var> as a parameter.</p>
 
 <h2>$this->bitauth->set_error_delimiters(<dfn>$prefix</dfn>, <dfn>$suffix</dfn>)</h2>
-<p>Set the prefix and suffix error delimiters. This function is called automatically to match form_validation by the MY_Form_validation included with BitAuth.</p>
+<p>Set the prefix and suffix error delimiters.</p>
+
+<h2>$this->bitauth->locked_out()</h2>
+<p>Returns <var>TRUE</var> if the current IP is locked out</p>
+
+<h2>$this->bitauth->log_attempt(<dfn>$user_id</dfn>, <dfn>$success</dfn> = <var>FALSE</var>)</h2>
+<p>Logs a login attempt.</p>
 
 <h2>$this->bitauth->hash_password(<dfn>$str</dfn>)</h2>
 <p>This function will hash the string it is given. This is a utility function used internally by BitAuth.</p>

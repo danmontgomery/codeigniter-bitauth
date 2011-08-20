@@ -11,6 +11,7 @@ $lang['bitauth_username']			= 'Username';
 $lang['bitauth_pwd_uppercase']		= 'Uppercase Letters';
 $lang['bitauth_pwd_number']			= 'Numbers';
 $lang['bitauth_pwd_special']		= 'Special Characters';
+$lang['bitauth_pwd_spaces']			= 'Spaces';
 
 /**
  * Login Error Messages

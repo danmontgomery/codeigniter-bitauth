@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Aug 02, 2011 at 08:23 AM
+-- Generation Time: Aug 20, 2011 at 03:19 PM
 -- Server version: 5.1.53
 -- PHP Version: 5.3.4
 
@@ -25,7 +25,6 @@ SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";
 -- Table structure for table `bitauth_assoc`
 --
 
-DROP TABLE IF EXISTS `bitauth_assoc`;
 CREATE TABLE IF NOT EXISTS `bitauth_assoc` (
   `assoc_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `user_id` int(10) unsigned NOT NULL,
@@ -47,12 +46,11 @@ INSERT INTO `bitauth_assoc` (`assoc_id`, `user_id`, `group_id`) VALUES
 -- Table structure for table `bitauth_groups`
 --
 
-DROP TABLE IF EXISTS `bitauth_groups`;
 CREATE TABLE IF NOT EXISTS `bitauth_groups` (
   `group_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(48) NOT NULL,
   `description` text NOT NULL,
-  `permissions` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `roles` bigint(20) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`group_id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=3 ;
 
@@ -60,8 +58,8 @@ CREATE TABLE IF NOT EXISTS `bitauth_groups` (
 -- Dumping data for table `bitauth_groups`
 --
 
-INSERT INTO `bitauth_groups` (`group_id`, `name`, `description`, `permissions`) VALUES
-(1, 'Administrators', 'Site Administrators (Full Access)', 1),
+INSERT INTO `bitauth_groups` (`group_id`, `name`, `description`, `roles`) VALUES
+(1, 'Administrators', 'Administrators (Full Access)', 1),
 (2, 'Users', 'Default User Group', 0);
 
 -- --------------------------------------------------------
@@ -70,7 +68,6 @@ INSERT INTO `bitauth_groups` (`group_id`, `name`, `description`, `permissions`) 
 -- Table structure for table `bitauth_logins`
 --
 
-DROP TABLE IF EXISTS `bitauth_logins`;
 CREATE TABLE IF NOT EXISTS `bitauth_logins` (
   `login_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `ip_address` int(10) unsigned NOT NULL,
@@ -92,7 +89,6 @@ CREATE TABLE IF NOT EXISTS `bitauth_logins` (
 -- Table structure for table `bitauth_userdata`
 --
 
-DROP TABLE IF EXISTS `bitauth_userdata`;
 CREATE TABLE IF NOT EXISTS `bitauth_userdata` (
   `userdata_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `user_id` int(10) unsigned NOT NULL,
@@ -115,14 +111,13 @@ INSERT INTO `bitauth_userdata` (`userdata_id`, `user_id`, `fullname`, `email`) V
 -- Table structure for table `bitauth_users`
 --
 
-DROP TABLE IF EXISTS `bitauth_users`;
 CREATE TABLE IF NOT EXISTS `bitauth_users` (
   `user_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `username` varchar(32) NOT NULL,
   `password` varchar(60) NOT NULL,
   `password_last_set` datetime NOT NULL,
   `password_never_expires` tinyint(1) NOT NULL DEFAULT '0',
-  `remember_me` text NOT NULL,
+  `remember_me` varchar(40) NOT NULL,
   `activation_code` varchar(40) NOT NULL,
   `active` tinyint(1) NOT NULL DEFAULT '0',
   `forgot_code` varchar(40) NOT NULL,
@@ -138,4 +133,4 @@ CREATE TABLE IF NOT EXISTS `bitauth_users` (
 --
 
 INSERT INTO `bitauth_users` (`user_id`, `username`, `password`, `password_last_set`, `password_never_expires`, `remember_me`, `activation_code`, `active`, `forgot_code`, `forgot_generated`, `enabled`, `last_login`, `last_login_ip`) VALUES
-(1, 'admin', '$2a$08$ZUW3zJkRfb3A.H/YieL1keA1wNYmPZIPfA9XxfmVeRAtFDrcPjQCq', NOW(), 0, '', '', 1, '', '0000-00-00 00:00:00', 1, '0000-00-00 00:00:00', 0);
+(1, 'admin', '$2a$08$560JEYl2Np/7/6RLc/mq/ecnumuBXig3e.pHh1lnH1pgpk94sTZhu', now(), 0, '', '', 1, '', '0000-00-00 00:00:00', 1, '0000-00-00 00:00:00', 0);

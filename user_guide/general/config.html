@@ -75,7 +75,7 @@ BitAuth Configuration
 	<td class="td"><strong>default_group_id</strong></td>
 	<td class="td">2</td>
 	<td class="td">Any Existing Group ID</td>
-	<td class="td"><p>The group_id of the default group users will be added to when they register. NOTE: This group's permissions will not be inherited by the user until they are activated.</p></td>
+	<td class="td"><p>The group_id of the default group users will be added to when they register. NOTE: This group's roles will not be inherited by the user until they are activated.</p></td>
 </tr>
 <tr>
 	<td class="td"><strong>remember_token_name</strong></td>
@@ -127,13 +127,37 @@ BitAuth Configuration
 </tr>
 <tr>
 	<td class="td"><strong>pwd_complexity_chars</strong></td>
-	<td class="td">Uppercase: [[:upper:]]<br/>Numbers: [[:digit:]]<br/>Special Chars: [[:punct:]]</td>
+	<td class="td">Uppercase: [[:upper:]]<br/>Numbers: [[:digit:]]<br/>Special Chars: [[:punct:]]<br/>Spaces: \s</td>
 	<td class="td">&nbsp;</td>
 	<td class="td"><p>The regular expression for each type of character. The default values should be language independent, so you should not need to change them.</p></td>
 </tr>
 <tr>
+	<td class="td"><strong>log_logins</strong></td>
+	<td class="td"><var>TRUE</var></td>
+	<td class="td"><var>TRUE</var>,<var>FALSE</var></td>
+	<td class="td"><p>Whether or not to log login attemps. Setting this to <var>FALSE</var> effectively disables locking out users from invalid login attemps.</p></td>
+</tr>
+<tr>
+	<td class="td"><strong>invalid_logins</strong></td>
+	<td class="td">3</td>
+	<td class="td">&nbsp;</td>
+	<td class="td"><p>How many invalid logins a user gets before they are locked out.</p></td>
+</tr>
+<tr>
+	<td class="td"><strong>mins_login_attempts</strong></td>
+	<td class="td">5</td>
+	<td class="td">&nbsp;</td>
+	<td class="td"><p>Number of minutes between invalid login attemps where a user will be locked out.</p></td>
+</tr>
+<tr>
+	<td class="td"><strong>mins_locked_out</strong></td>
+	<td class="td">10</td>
+	<td class="td">&nbsp;</td>
+	<td class="td"><p>Number of minutes before a locked account is unlocked.</p></td>
+</tr>
+<tr>
 	<td class="td"><strong>table</strong></td>
-	<td class="td">Users: bitauth_users<br/>Data: bitauth_userdata<br/>Groups: bitauth_groups<br/>Assoc: bitauth_assoc</td>
+	<td class="td">Users: bitauth_users<br/>Data: bitauth_userdata<br/>Groups: bitauth_groups<br/>Assoc: bitauth_assoc<br/>Logins: bitauth_logins</td>
 	<td class="td">&nbsp;</td>
 	<td class="td">
 		<p>The tables used by BitAuth. If you have changed these in your database, you should change them here.</p>
@@ -142,6 +166,7 @@ BitAuth Configuration
 			<li>data: Where all optional user data is stored. Any custom fields you add go here.</li>
 			<li>groups: Where all group information is stored.</li>
 			<li>assoc: Where the relationships between users and groups are stored.</li>
+			<li>logins: Where login attempts are logged</li>
 		</ul>
 	</td>
 </tr>
@@ -164,12 +189,12 @@ BitAuth Configuration
 	<td class="td"><p>What format BitAuth stores timestamps in. Defaults to the MySQL DATETIME format. To use unix timestamps, change this value to <var>'U'</var> (in addition to changing your DB structure).</p></td>
 </tr>
 <tr>
-	<td class="td"><strong>permissions</strong></td>
+	<td class="td"><strong>roles</strong></td>
 	<td class="td">&nbsp;</td>
 	<td class="td">&nbsp;</td>
 	<td class="td">
-		<p>This is where all of your permissions are stored. There is only one permission required by BitAuth, <dfn>is_admin</dfn>. This should always be the first listed.</p>
-		<p>You can read more about permissions at <a href="../permissions/creating.html">Creating Permissions</a>.</p>
+		<p>This is where all of your roles are stored. There is only one role required by BitAuth, <dfn>admin</dfn>. This should always be the first listed.</p>
+		<p>You can read more about roles at <a href="../roles/creating.html">Creating Roles</a>.</p>
 	</td>
 </tr>
 

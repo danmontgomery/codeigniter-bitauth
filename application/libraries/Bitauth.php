@@ -9,6 +9,7 @@
  * @license DBAD <http://dbad-license.org/license>
  * @link https://github.com/danmontgomery/codeigniter-bitauth
  * @link http://dmontgomery.net/bitauth
+ * @todo Get all users with specific role
  */
 class Bitauth
 {
@@ -27,6 +28,7 @@ class Bitauth
 	public $_pwd_complexity_chars;
 	public $_error_delim_prefix = '<p>';
 	public $_error_delim_suffix = '</p>';
+	public $_forgot_valid_for;
 	public $_log_logins;
 	public $_invalid_logins;
 	public $_mins_login_attempts;
@@ -59,6 +61,7 @@ class Bitauth
 		$this->_pwd_max_length				= $this->config->item('pwd_max_length', 'bitauth');
 		$this->_pwd_complexity				= $this->config->item('pwd_complexity', 'bitauth');
 		$this->_pwd_complexity_chars		= $this->config->item('pwd_complexity_chars', 'bitauth');
+		$this->_forgot_valid_for			= $this->config->item('forgot_valid_for', 'bitauth');
 		$this->_log_logins					= $this->config->item('log_logins', 'bitauth');
 		$this->_invalid_logins				= $this->config->item('invalid_logins', 'bitauth');
 		$this->_mins_login_attempts			= $this->config->item('mins_login_attempts', 'bitauth');
@@ -95,13 +98,13 @@ class Bitauth
 	{
 		if(empty($username))
 		{
-			$this->set_error(lang('bitauth_username_required'));
+			$this->set_error($this->lang->line('bitauth_username_required'));
 			return FALSE;
 		}
 
 		if($this->locked_out())
 		{
-			$this->set_error(sprintf(lang('bitauth_user_locked_out'), $this->_mins_locked_out));
+			$this->set_error(sprintf($this->lang->line('bitauth_user_locked_out'), $this->_mins_locked_out));
 			return FALSE;
 		}
 
@@ -120,14 +123,14 @@ class Bitauth
 				if( ! $user->active)
 				{
 					$this->log_attempt($user->user_id, FALSE);
-					$this->set_error(lang('bitauth_user_inactive'));
+					$this->set_error($this->lang->line('bitauth_user_inactive'));
 					return FALSE;
 				}
 
 				if($this->password_is_expired($user))
 				{
 					$this->log_attempt($user->user_id, FALSE);
-					$this->set_error(lang('bitauth_pwd_expired'));
+					$this->set_error($this->lang->line('bitauth_pwd_expired'));
 					return FALSE;
 				}
 
@@ -163,7 +166,7 @@ class Bitauth
 			$this->log_attempt(FALSE, FALSE);
 		}
 
-		$this->set_error(sprintf(lang('bitauth_login_failed'), lang('bitauth_username')));
+		$this->set_error(sprintf($this->lang->line('bitauth_login_failed'), $this->lang->line('bitauth_username')));
 		return FALSE;
 	}
 
@@ -224,13 +227,13 @@ class Bitauth
 		{
 			if( ! isset($user->{$_field}) || $user->{$_field} != $data[$_field])
 			{
-				if(lang('bitauth_invalid_'.$_field))
+				if($this->lang->line('bitauth_invalid_'.$_field))
 				{
-					$this->set_error(lang('bitauth_invalid_'.$_field));
+					$this->set_error($this->lang->line('bitauth_invalid_'.$_field));
 				}
 				else
 				{
-					$this->set_error(sprintf(lang('bitauth_lang_not_found'), 'bitauth_invalid_'.$_field));
+					$this->set_error(sprintf($this->lang->line('bitauth_lang_not_found'), 'bitauth_invalid_'.$_field));
 				}
 				return FALSE;
 			}
@@ -305,7 +308,7 @@ class Bitauth
 	 * Bitauth::log_attempt()
 	 *
 	 */
-	public function log_attempt($user_id, $success = 0)
+	public function log_attempt($user_id, $success = FALSE)
 	{
 		if($this->_log_logins == TRUE)
 		{
@@ -313,7 +316,7 @@ class Bitauth
 			$data = array(
 				'ip_address' => ip2long($_SERVER['REMOTE_ADDR']),
 				'user_id' => $user_id,
-				'success' => $success,
+				'success' => (int)$success,
 				'time' => $this->timestamp()
 			);
 
@@ -335,6 +338,12 @@ class Bitauth
 			if($_key !== 'password')
 			{
 				$this->$_key = $_value;
+
+				if($_key == 'roles')
+				{
+					$_value = $this->encrypt->encode($_value);
+				}
+
 				$session_data[$this->_cookie_elem_prefix.$_key] = $_value;
 			}
 		}
@@ -360,12 +369,17 @@ class Bitauth
 
 			if( ! isset($this->$_key))
 			{
+				if($_key == 'roles')
+				{
+					$_value = $this->encrypt->decode($_value);
+				}
+				
 				$this->$_key = $_value;
 			}
 			else
 			{
-				log_message('error', sprintf(lang('bitauth_data_error'),$_key));
-				show_error(sprintf(lang('bitauth_data_error'),$_key));
+				log_message('error', sprintf($this->lang->line('bitauth_data_error'),$_key));
+				show_error(sprintf($this->lang->line('bitauth_data_error'),$_key));
 			}
 		}
 	}
@@ -442,7 +456,7 @@ class Bitauth
 	{
 		if( ! is_array($data) && ! is_object($data))
 		{
-			$this->set_error(lang('bitauth_add_user_datatype'));
+			$this->set_error($this->lang->line('bitauth_add_user_datatype'));
 			return FALSE;
 		}
 
@@ -455,13 +469,13 @@ class Bitauth
 
 		if(empty($data['username']))
 		{
-			$this->set_error(sprintf(lang('bitauth_username_required'), lang('bitauth_username')));
+			$this->set_error(sprintf($this->lang->line('bitauth_username_required'), $this->lang->line('bitauth_username')));
 			return FALSE;
 		}
 
 		if(empty($data['password']))
 		{
-			$this->set_error(lang('bitauth_password_required'));
+			$this->set_error($this->lang->line('bitauth_password_required'));
 			return FALSE;
 		}
 
@@ -527,7 +541,7 @@ class Bitauth
 
 		if($this->db->trans_status() === FALSE)
 		{
-			$this->set_error(lang('bitauth_add_user_failed'));
+			$this->set_error($this->lang->line('bitauth_add_user_failed'));
 			$this->db->trans_rollback();
 
 			return FALSE;
@@ -545,7 +559,7 @@ class Bitauth
 	{
 		if( ! is_array($data) && ! is_object($data))
 		{
-			$this->set_error(lang('bitauth_add_group_datatype'));
+			$this->set_error($this->lang->line('bitauth_add_group_datatype'));
 			return FALSE;
 		}
 
@@ -553,7 +567,7 @@ class Bitauth
 
 		if(empty($data['name']))
 		{
-			$this->set_error(lang('bitauth_groupname_required'));
+			$this->set_error($this->lang->line('bitauth_groupname_required'));
 			return FALSE;
 		}
 
@@ -606,7 +620,7 @@ class Bitauth
 
 		if($this->db->trans_status() === FALSE)
 		{
-			$this->set_error(lang('bitauth_add_group_failed'));
+			$this->set_error($this->lang->line('bitauth_add_group_failed'));
 			$this->db->trans_rollback();
 
 			return FALSE;
@@ -622,14 +636,12 @@ class Bitauth
 	 */
 	public function activate($activation_code)
 	{
-		$query = $this->db->where('activation_code', $activation_code)->get($this->_table['users']);
-		if($query && $query->num_rows())
+		if($user = $this->get_user_by_activation_code($activation_code))
 		{
-			$user = $query->row();
 			return $this->update_user($user->user_id, array('active' => 1, 'activation_code' => ''));
 		}
 
-		$this->set_error(lang('bitauth_activate_failed'));
+		$this->set_error($this->lang->line('bitauth_activate_failed'));
 		return FALSE;
 	}
 
@@ -641,7 +653,7 @@ class Bitauth
 	{
 		if( ! is_array($data) && ! is_object($data))
 		{
-			$this->set_error(lang('bitauth_edit_user_datatype'));
+			$this->set_error($this->lang->line('bitauth_edit_user_datatype'));
 			return FALSE;
 		}
 
@@ -649,7 +661,7 @@ class Bitauth
 
 		if(isset($data['username']) && ! strlen($data['username']))
 		{
-			$this->set_error(sprintf(lang('bitauth_username_required'), lang('bitauth_username')));
+			$this->set_error(sprintf($this->lang->line('bitauth_username_required'), $this->lang->line('bitauth_username')));
 			return FALSE;
 		}
 
@@ -713,13 +725,13 @@ class Bitauth
 
 		if($this->db->trans_status() === FALSE)
 		{
-			$this->set_error(lang('bitauth_edit_user_failed'));
+			$this->set_error($this->lang->line('bitauth_edit_user_failed'));
 			$this->db->trans_rollback();
 
 			return FALSE;
 		}
 
-		if($this->user_id == $id)
+		if( ! empty($this->user_id) && $this->user_id == $id)
 		{
 			$user = $this->get_user_by_id($id);
 			$this->set_session_values($user);
@@ -749,7 +761,7 @@ class Bitauth
 			return $this->update_user($user_id, array('enabled' => $enabled));
 		}
 
-		$this->set_error(sprintf(lang('bitauth_user_not_found'), $user_id));
+		$this->set_error(sprintf($this->lang->line('bitauth_user_not_found'), $user_id));
 		return FALSE;
 	}
 
@@ -768,7 +780,7 @@ class Bitauth
 
 			if($this->db->trans_status() == FALSE)
 			{
-				$this->set_error(lang('bitauth_del_user_failed'));
+				$this->set_error($this->lang->line('bitauth_del_user_failed'));
 				$this->db->trans_rollback();
 				return FALSE;
 			}
@@ -777,7 +789,7 @@ class Bitauth
 			return TRUE;
 		}
 
-		$this->set_error(sprintf(lang('bitauth_user_not_found'), $user_id));
+		$this->set_error(sprintf($this->lang->line('bitauth_user_not_found'), $user_id));
 		return FALSE;
 	}
 
@@ -809,7 +821,7 @@ class Bitauth
 			return TRUE;
 		}
 
-		//$this->set_error(lang('bitauth_set_pw_failed'));
+		//$this->set_error($this->lang->line('bitauth_set_pw_failed'));
 		return FALSE;
 	}
 
@@ -821,7 +833,7 @@ class Bitauth
 	{
 		if( ! is_array($data) && ! is_object($data))
 		{
-			$this->set_error(lang('bitauth_edit_group_datatype'));
+			$this->set_error($this->lang->line('bitauth_edit_group_datatype'));
 			return FALSE;
 		}
 
@@ -885,7 +897,7 @@ class Bitauth
 
 		if($this->db->trans_status() === FALSE)
 		{
-			$this->set_error(lang('bitauth_edit_group_failed'));
+			$this->set_error($this->lang->line('bitauth_edit_group_failed'));
 			$this->db->trans_rollback();
 
 			return FALSE;
@@ -909,7 +921,7 @@ class Bitauth
 
 		if($this->db->trans_status() == FALSE)
 		{
-			$this->set_error(lang('bitauth_del_group_failed'));
+			$this->set_error($this->lang->line('bitauth_del_group_failed'));
 			$this->db->trans_rollback();
 			return FALSE;
 		}
@@ -928,8 +940,6 @@ class Bitauth
 		{
 			$mask = $this->roles;
 		}
-
-		$mask = $this->encrypt->decode($mask);
 
 		// No point checking, user doesn't have permission
 		if($mask == 0)
@@ -995,7 +1005,7 @@ class Bitauth
 		$query = $this->db->where('LOWER(`username`)', strtolower($username))->get($this->_table['users']);
 		if($query && $query->num_rows())
 		{
-			$this->set_error(lang('bitauth_unique_username'));
+			$this->set_error($this->lang->line('bitauth_unique_username'));
 			return FALSE;
 		}
 
@@ -1016,7 +1026,7 @@ class Bitauth
 		$query = $this->db->where('LOWER(`name`)', strtolower($group_name))->get($this->_table['groups']);
 		if($query && $query->num_rows())
 		{
-			$this->set_error(lang('bitauth_unique_group'));
+			$this->set_error($this->lang->line('bitauth_unique_group'));
 			return FALSE;
 		}
 
@@ -1031,13 +1041,13 @@ class Bitauth
 	{
 		if($this->_pwd_min_length > 0 && strlen($password) < $this->_pwd_min_length)
 		{
-			$this->set_error(sprintf(lang('bitauth_passwd_min_length'), $this->_pwd_min_length));
+			$this->set_error(sprintf($this->lang->line('bitauth_passwd_min_length'), $this->_pwd_min_length));
 			return FALSE;
 		}
 
 		if($this->_pwd_max_length > 0 && strlen($password) > $this->_pwd_max_length)
 		{
-			$this->set_error(sprintf(lang('bitauth_passwd_max_length'), $this->_pwd_max_length));
+			$this->set_error(sprintf($this->lang->line('bitauth_passwd_max_length'), $this->_pwd_max_length));
 			return FALSE;
 		}
 
@@ -1045,7 +1055,7 @@ class Bitauth
 		{
 			if(preg_match('/'.$_rule.'/', $password) < $this->_pwd_complexity[$_label])
 			{
-				$this->set_error(sprintf(lang('bitauth_passwd_complexity'), $this->complexity_requirements()));
+				$this->set_error(sprintf($this->lang->line('bitauth_passwd_complexity'), $this->complexity_requirements()));
 				return FALSE;
 			}
 		}
@@ -1066,7 +1076,7 @@ class Bitauth
 
 		if( ! is_array($user) && ! is_object($user))
 		{
-			$this->set_error(lang('bitauth_expired_datatype'));
+			$this->set_error($this->lang->line('bitauth_expired_datatype'));
 			return TRUE;
 		}
 
@@ -1093,7 +1103,7 @@ class Bitauth
 
 		if( ! is_array($user) && ! is_object($user))
 		{
-			$this->set_error(lang('bitauth_expiring_datatype'));
+			$this->set_error($this->lang->line('bitauth_expiring_datatype'));
 			return TRUE;
 		}
 
@@ -1137,7 +1147,6 @@ class Bitauth
 			{
 				$row->groups = explode('|', $row->groups);
 				$row->last_login_ip = long2ip($row->last_login_ip);
-				$row->roles = $this->encrypt->encode($row->roles);
 
 				$ret[] = $row;
 			}
@@ -1169,7 +1178,7 @@ class Bitauth
 	 * Bitauth::get_user_by_id()
 	 *
 	 */
-	public function get_user_by_id($id, $include_disabled = FALSE)
+	public function get_user_by_id($id, $include_disabled = TRUE)
 	{
 		$this->db->where('users.user_id', $id);
 		$users = $this->get_users($include_disabled);
@@ -1182,10 +1191,53 @@ class Bitauth
 		return FALSE;
 	}
 
-	 /**
-	  * Bitauth::get_groups()
-	  *
-	  */
+	/**
+	 * Bitauth::get_user_by_activation_code()
+	 *
+	 */
+	public function get_user_by_activation_code($activation_code)
+	{
+		$this->db->where('activation_code', $activation_code);
+		$users = $this->get_users();
+		
+		if(is_array($users) && ! empty($users))
+		{
+			return $users[0];
+		}
+
+		return FALSE;
+	}
+
+	/**
+	 * Bitauth::get_user_by_forgot_code()
+	 *
+	 */
+	public function get_user_by_forgot_code($forgot_code)
+	{
+		$this->db->where('forgot_code', $forgot_code);
+		$users = $this->get_users();
+		
+		if(is_array($users) && ! empty($users))
+		{
+			$user = $users[0];
+
+			// If forgot code has expired, remove it and return false
+			if($user->forgot_generated < $this->timestamp($this->timestamp(time(), 'U') - $this->_forgot_valid_for))
+			{
+				$this->update_user($user->user_id, array('forgot_code' => ''));
+				return FALSE;
+			}
+
+			return $user;
+		}
+
+		return FALSE;
+	}
+	 
+	/**
+	 * Bitauth::get_groups()
+	 *
+	 */
 	public function get_groups()
 	{
 		$query = $this->db
@@ -1322,7 +1374,7 @@ class Bitauth
 		{
 			if($_count > 0)
 			{
-				$ret[] = lang('bitauth_pwd_'.$_label).': '.$_count;
+				$ret[] = $this->lang->line('bitauth_pwd_'.$_label).': '.$_count;
 			}
 		}
 
@@ -1360,27 +1412,26 @@ class Bitauth
 	 {
  		if($CI =& get_instance())
  		{
- 			$this->input	=& $CI->input;
-			$this->load		=& $CI->load;
-			$this->config	=& $CI->config;
-			$this->lang		=& $CI->lang;
+ 			$this->input	= $CI->input;
+			$this->load		= $CI->load;
+			$this->config	= $CI->config;
+			$this->lang		= $CI->lang;
 
 			$CI->load->library('session');
-			$this->session	=& $CI->session;
+			$this->session	= $CI->session;
 
 			$CI->load->library('encrypt');
-			$this->encrypt	=& $CI->encrypt;
+			$this->encrypt	= $CI->encrypt;
 
 			$this->load->database();
-			$this->db		=& $CI->db;
+			$this->db		= $CI->db;
 
-			$this->load->helper('language');
 			$this->lang->load('bitauth');
 
 			if( ! function_exists('gmp_init'))
 			{
-				log_message('error', lang('bitauth_enable_gmp'));
-				show_error(lang('bitauth_enable_gmp'));
+				log_message('error', $this->lang->line('bitauth_enable_gmp'));
+				show_error($this->lang->line('bitauth_enable_gmp'));
 			}
 
 			$this->load->config('bitauth', TRUE);
@@ -1390,13 +1441,13 @@ class Bitauth
 				'iteration_count_log2' => $this->config->item('phpass_iterations', 'bitauth'),
 				'portable_hashes' => $this->config->item('phpass_portable', 'bitauth')
 			));
-			$this->phpass	=& $CI->phpass;
+			$this->phpass	= $CI->phpass;
 
 			return;
 		}
 
-		log_message('error', lang('bitauth_instance_na'));
-		show_error(lang('bitauth_instance_na'));
+		log_message('error', $this->lang->line('bitauth_instance_na'));
+		show_error($this->lang->line('bitauth_instance_na'));
 
 	 }
 

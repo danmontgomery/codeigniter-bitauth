@@ -75,9 +75,9 @@ Adding Groups
 	<td class="td">Description of the group.</td>
 </tr>
 <tr>
-	<td class="td"><strong>permissions</strong></td>
-	<td class="td">array('example_perm_1', 'example_perm_2')</td>
-	<td class="td">Array of permissions slugs to be given to this group.</td>
+	<td class="td"><strong>roles</strong></td>
+	<td class="td">array('example_role_1', 'example_role_2')</td>
+	<td class="td">Array of roles slugs to be given to this group.</td>
 </tr>
 <tr>
 	<td class="td"><strong>members</strong></td>
@@ -90,13 +90,13 @@ Adding Groups
 <pre>$group = array(
     'name' => 'Example Group',
     'description' => 'This is an example group.',
-    'permissions' => array('example_perm_1', 'example_perm_2'),
+    'roles' => array('example_role_1', 'example_role_2'),
     'members' => array(1, 4, 15)
 );
 
 $this->bitauth->add_group($group);</pre>
 
-<p>For information on assigning permissions, see <a href="../permissions/setting.html">Setting Permissions</a>.</p>
+<p>For information on assigning roles, see <a href="../roles/setting.html">Setting Roles</a>.</p>
 <p>For information on adding users to a group, see <a href="./assigning.html">Adding Members</a>.</p>
 
 </div>

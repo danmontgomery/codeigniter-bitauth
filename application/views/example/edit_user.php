@@ -41,7 +41,7 @@
 				echo '<tr><td colspan="2">'.validation_errors().'</td></tr>';
 			}
 
-			echo '<tr><td class="label" colspan="2">'.form_submit('submit','Update').'</td></tr>';
+			echo '<tr><td class="label" colspan="2">'.anchor('example', 'Cancel').' '.form_submit('submit','Update').'</td></tr>';
 		} else {
 			echo '<tr><td><p>User Not Found</p><p>'.anchor('example', 'Go Back').'</p></td></tr>';
 		}

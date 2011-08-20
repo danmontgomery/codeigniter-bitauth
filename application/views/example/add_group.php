@@ -9,9 +9,10 @@
 		#table td, #table th { border: 1px solid #666; border-left: 0; border-bottom: 0; padding: 6px; width: 50%; text-align: left; vertical-align: top; }
 		#table td.label { text-align: right; }
 		#table caption { font-size: 1.4em; font-weight: bold; }
-		#table select, #table input[type=text], #table input[type=password] { width: 270px; }
+		#table select, #table input[type=text], #table input[type=password], #table textarea { width: 270px; }
 		.error { color: #940D0A; font-weight: bold; }
 	</style>
+
 	<title>BitAuth: Add Group</title>
 </head>
 <body>
@@ -20,12 +21,11 @@
 
 		echo '<table border="0" cellspacing="0" cellpadding="0" id="table">';
 		echo '<caption>BitAuth Example: Add Group</caption>';
-		echo '<tr><td class="label">Username</td><td>'.form_input('username', set_value('username')).'</td></tr>';
-		echo '<tr><td class="label">Full Name</td><td>'.form_input('fullname', set_value('fullname')).'</td></tr>';
-		echo '<tr><td class="label">Email</td><td>'.form_input('email', set_value('email')).'</td></tr>';
-		echo '<tr><td class="label">Password</td><td>'.form_password('password').'</td></tr>';
-		echo '<tr><td class="label">Confirm Password</td><td>'.form_password('password_conf').'</td></tr>';
 
+		echo '<tr><td class="label">Group Name</td><td>'.form_input('name', set_value('name')).'</td></tr>';
+		echo '<tr><td class="label">Description</td><td>'.form_textarea('description', set_value('description')).'</td></tr>';
+		echo '<tr><td class="label">Roles</td><td>'.form_multiselect('roles[]', $roles, set_value('roles[]')).'</td></tr>';
+		echo '<tr><td class="label">Members</td><td>'.form_multiselect('members[]', $users, set_value('members[]')).'</td></tr>';
 		if(validation_errors())
 		{
 			echo '<tr><td colspan="2">'.validation_errors().'</td></tr>';

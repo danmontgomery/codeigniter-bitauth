@@ -3,7 +3,7 @@
 <head>
 
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>BitAuth User Guide : Checking Permissions</title>
+<title>BitAuth User Guide : Checking Roles</title>
 
 <style type='text/css' media='all'>@import url('../userguide.css');</style>
 <link rel='stylesheet' type='text/css' media='all' href='../userguide.css' />
@@ -44,7 +44,7 @@
 <td id="breadcrumb">
 <a href="http://dmontgomery.net/code/codeigniter-bitauth/">BitAuth</a> &nbsp;&#8250;&nbsp;
 <a href="../index.html">User Guide Home</a> &nbsp;&#8250;&nbsp;
-Checking Permissions
+Checking Roles
 </td>
 
 </tr>
@@ -56,38 +56,37 @@ Checking Permissions
 <!-- START CONTENT -->
 <div id="content">
 <h1>How does it work?</h1>
-<p>Users can be members of one or many groups. Permissions are assigned to a group. When a user is a member of a group, he or she
-	inherits all permissions of that group. <strong>If a user is a member of multiple groups, he or she inherits all of the combined permissions
-	of those groups.</strong></p>
-<h1>Checking Permissions</h1>
+<p>Users can be members of one or many groups. Roles are assigned to a group. When a user is a member of a group, he or she inherits all roles of that group. <strong>If a user is a member of multiple groups, he or she inherits all of the combined roles of those groups.</strong></p>
+<h1>Checking Roles</h1>
 
-<h2>$this->bitauth->has_perm(<dfn>$slug</dfn>, <dfn>$mask</dfn> = <var>NULL</var>)</h2>
-<p>Checks whether a user or group has a permission. If <dfn>$mask</dfn> is NULL, the currently logged in user is assumed.</p>
+<h2>$this->bitauth->has_role(<dfn>$slug</dfn>, <dfn>$mask</dfn> = <var>NULL</var>)</h2>
+<p>Checks whether a user or group has a role. If <dfn>$mask</dfn> is NULL, the currently logged in user is assumed.</p>
+
 <h3>Checking the current user</h3>
-<pre>if($this->bitauth->has_perm(<var>'can_edit'</var>))
+<pre>if($this->bitauth->has_role(<var>'can_edit'</var>))
 {
-    echo "Current user has 'can_edit' permission.";
+    echo "Current user has 'can_edit' role.";
 }</pre>
 
 <h3>Checking another user</h3>
 <pre>$user = $this->bitauth->get_user_by_username(<var>'testuser'</var>);
 
-if($this->bitauth->has_perm(<var>'can_edit'</var>, <dfn>$user->permissions</dfn>))
+if($this->bitauth->has_role(<var>'can_edit'</var>, <dfn>$user->roles</dfn>))
 {
-    echo "User 'testuser' has the 'can_edit' permission.";
+    echo "User 'testuser' has the 'can_edit' role.";
 }</pre>
 
 <h3>Checking a group</h3>
 <pre>$group = $this->bitauth->get_group_by_name(<var>'Test Group'</var>);
 
-if($this->bitauth->has_perm(<var>'can_edit'</var>, <dfn>$group->permissions</dfn>))
+if($this->bitauth->has_role(<var>'can_edit'</var>, <dfn>$group->roles</dfn>))
 {
-    echo "Users in group 'Test Group' have the 'can_edit' permission.";
+    echo "Users in group 'Test Group' have the 'can_edit' role.";
 }</pre>
 
 <h2>$this->bitauth->is_admin(<dfn>$mask</dfn> = <var>NULL</var>)</h2>
-<p>Check specifically for the administrator permission. The <dfn>$mask</dfn> parameter of this function
-behaves exactly like it does in has_perm().</p>
+<p>Check specifically for the administrator role. The <dfn>$mask</dfn> parameter of this function
+behaves exactly like it does in has_role().</p>
 <pre>if($this->bitauth->is_admin())
 {
     echo 'Current user is an administrator.';

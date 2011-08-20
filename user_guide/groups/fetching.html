@@ -81,9 +81,9 @@ Fetching Groups
 	<td class="td">Description of the group.</td>
 </tr>
 <tr>
-	<td class="td"><strong>permissions</strong></td>
+	<td class="td"><strong>roles</strong></td>
 	<td class="td">4</td>
-	<td class="td">Numeric representation of the group's permissions settings.</td>
+	<td class="td">Numeric representation of the group's roles.</td>
 </tr>
 <tr>
 	<td class="td"><strong>members</strong></td>
@@ -100,7 +100,7 @@ foreach($all_groups as $group)
     echo $group->name.'&lt;br/&gt;';
 }</pre>
 
-<p>For information on checking a group's permissions, see <a href="../permissions/checking.html">Checking Permissions</a>.</p>
+<p>For information on checking a group's roles, see <a href="../roles/checking.html">Checking Roles</a>.</p>
 
 <h2>$this->bitauth->get_group_by_id(<dfn>$group_id</dfn>)</h2>
 <p>Returns an object with the same information as <dfn>get_groups()</dfn> for one group, by group_id. Returns <var>FALSE</var> on failure.</p>
