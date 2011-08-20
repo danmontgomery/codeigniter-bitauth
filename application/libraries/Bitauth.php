@@ -29,8 +29,10 @@ class Bitauth
 	public $_error_delim_suffix = '</p>';
 	public $_log_logins;
 	public $_invalid_logins;
-	public $_lockout_time;
+	public $_mins_login_attempts;
+	public $_mins_locked_out;
 	public $_date_format;
+	public $_cookie_elem_prefix = 'ba_';
 
 	private $_all_roles;
 	private $_error;
@@ -59,7 +61,8 @@ class Bitauth
 		$this->_pwd_complexity_chars		= $this->config->item('pwd_complexity_chars', 'bitauth');
 		$this->_log_logins					= $this->config->item('log_logins', 'bitauth');
 		$this->_invalid_logins				= $this->config->item('invalid_logins', 'bitauth');
-		$this->_lockout_time				= $this->config->item('lockout_time', 'bitauth');
+		$this->_mins_login_attempts			= $this->config->item('mins_login_attempts', 'bitauth');
+		$this->_mins_locked_out				= $this->config->item('mins_locked_out', 'bitauth');
 		$this->_date_format					= $this->config->item('date_format', 'bitauth');
 
 		$this->_all_roles					= $this->config->item('roles', 'bitauth');
@@ -75,7 +78,7 @@ class Bitauth
 		{
 			$this->get_session_values();
 		}
-		else if($this->input->cookie($this->_remember_token_name))
+		else if($this->input->cookie($this->config->item('cookie_prefix').$this->_remember_token_name))
 		{
 			$this->login_from_token();
 		}
@@ -98,7 +101,7 @@ class Bitauth
 
 		if($this->locked_out())
 		{
-			$this->set_error(lang('bitauth_user_locked_out'));
+			$this->set_error(sprintf(lang('bitauth_user_locked_out'), $this->_mins_locked_out));
 			return FALSE;
 		}
 
@@ -170,13 +173,10 @@ class Bitauth
 	 */
 	public function login_from_token()
 	{
-		if(($token = $this->input->cookie($this->_remember_token_name)))
+		if(($token = $this->input->cookie($this->config->item('cookie_prefix').$this->_remember_token_name)))
 		{
 			$token = explode("\n", $token);
 			$username = $token[0];
-
-			var_dump($token);
-			exit();
 
 			if($this->login($username, NULL, (bool)$this->_remember_token_updates, FALSE, $token[1]))
 			{
@@ -197,7 +197,7 @@ class Bitauth
 		$session_data = $this->session->all_userdata();
 		foreach($session_data as $_key => $_value)
 		{
-			if(substr($_key, 0, 8) !== 'bitauth_')
+			if(substr($_key, 0, strlen($this->_cookie_elem_prefix)) !== $this->_cookie_elem_prefix)
 			{
 				$this->session->unset_userdata($_key);
 			}
@@ -249,13 +249,22 @@ class Bitauth
 		{
 			foreach($field as $_field)
 			{
-				$this->add_login_field($_field);
+				$_field = trim($_field);
+				if(strlen($_field))
+				{
+					$this->add_login_field($_field);
+				}
 			}
 
 			return;
 		}
 
-		$this->_login_fields[] = $field;
+		$field = trim($field);
+		if(strlen($field))
+		{
+			$this->_login_fields[] = trim($field);
+		}
+		return;
 	}
 
 	/**
@@ -265,20 +274,28 @@ class Bitauth
 	public function locked_out()
 	{
 		// If invalid_logins is disabled, can't be locked out
-		if($this->_invalid_logins == 0)
+		if($this->_invalid_logins < 1)
 		{
 			return FALSE;
 		}
 
 		$query = $this->db
-			->where('time >=', $this->timestamp(strtotime($this->_lockout_time.' minutes ago')))
 			->where('ip_address', ip2long($_SERVER['REMOTE_ADDR']))
 			->where('success', 0)
+			->limit($this->_invalid_logins)
+			->order_by('time', 'DESC')
 			->get($this->_table['logins']);
 
-		if($query && $query->num_rows() >= $this->_invalid_logins)
+		if($query && $query->num_rows() == $this->_invalid_logins)
 		{
-			return TRUE;
+			$first = $query->row(0);
+			$last = $query->row($this->_invalid_logins - 1);
+
+			if($this->timestamp(strtotime($last->time), 'U') - $this->timestamp(strtotime($first->time), 'U') <= ($this->_mins_login_attempts * 60)
+				&& $this->timestamp(strtotime($last->time), 'U') >= $this->timestamp(strtotime($this->_mins_login_attempts.' minutes ago'), 'U'))
+			{
+				return TRUE;
+			}
 		}
 
 		return FALSE;
@@ -318,7 +335,7 @@ class Bitauth
 			if($_key !== 'password')
 			{
 				$this->$_key = $_value;
-				$session_data['bitauth_'.$_key] = $_value;
+				$session_data[$this->_cookie_elem_prefix.$_key] = $_value;
 			}
 		}
 
@@ -334,12 +351,12 @@ class Bitauth
 		$session_data = $this->session->all_userdata();
 		foreach($session_data as $_key => $_value)
 		{
-			if(substr($_key, 0, 8) !== 'bitauth_')
+			if(substr($_key, 0, strlen($this->_cookie_elem_prefix)) !== $this->_cookie_elem_prefix)
 			{
 				continue;
 			}
 
-			$_key = substr($_key, 8);
+			$_key = substr($_key, strlen($this->_cookie_elem_prefix));
 
 			if( ! isset($this->$_key))
 			{
@@ -347,8 +364,8 @@ class Bitauth
 			}
 			else
 			{
-				log_message('error', lang('bitauth_data_error').$_key);
-				show_error(lang('bitauth_data_error').$_key);
+				log_message('error', sprintf(lang('bitauth_data_error'),$_key));
+				show_error(sprintf(lang('bitauth_data_error'),$_key));
 			}
 		}
 	}
@@ -395,7 +412,7 @@ class Bitauth
 	 */
 	public function delete_remember_token()
 	{
-		if($this->input->cookie($this->_remember_token_name))
+		if($this->input->cookie($this->config->item('cookie_prefix').$this->_remember_token_name))
 		{
 			$cookie = array(
 				'name' => $this->_remember_token_name,
@@ -403,7 +420,7 @@ class Bitauth
 				'expire' => -86400
 			);
 
-			if($token = $this->input->cookie($this->_remember_token_name))
+			if($token = $this->input->cookie($this->config->item('cookie_prefix').$this->_remember_token_name))
 			{
 				$token = explode("\n", $token);
 				$this->db
@@ -655,6 +672,14 @@ class Bitauth
 			}
 		}
 
+		if(isset($data['password']))
+		{
+			$new_password = $this->hash_password($data['password']);
+
+			$data['password'] = $new_password;
+			$data['password_last_set'] = $this->timestamp();
+		}
+
 		$this->db->trans_start();
 
 		if( ! empty($data))
@@ -779,14 +804,7 @@ class Bitauth
 	 */
 	public function set_password($user_id, $new_password)
 	{
-		$new_password = $this->hash_password($new_password);
-
-		$data = array(
-			'password' => $new_password,
-			'password_last_set' => $this->timestamp()
-		);
-
-		if($this->update_user($user_id, $data))
+		if($this->update_user($user_id, array('password' => $new_password)))
 		{
 			return TRUE;
 		}
@@ -1245,9 +1263,14 @@ class Bitauth
 	 * Bitauth::get_error()
 	 *
 	 */
-	public function get_error()
+	public function get_error($incl_delim = TRUE)
 	{
-		return $this->_error_delim_prefix.$this->_error.$this->_error_delim_suffix;
+		if($incl_delim)
+		{
+			return $this->_error_delim_prefix.$this->_error.$this->_error_delim_suffix;
+		}
+
+		return $this->_error;
 	}
 
 	/**
@@ -1284,14 +1307,14 @@ class Bitauth
 	 */
 	public function logged_in()
 	{
-		return (bool)$this->session->userdata('bitauth_username');
+		return (bool)$this->session->userdata($this->_cookie_elem_prefix.'username');
 	}
 
 	/**
 	 * Bitauth::complexity_requirements()
 	 *
 	 */
-	public function complexity_requirements($separator = '<br/>')
+	public function complexity_requirements($separator = ', ')
 	{
 		$ret = array();
 
@@ -1368,7 +1391,13 @@ class Bitauth
 				'portable_hashes' => $this->config->item('phpass_portable', 'bitauth')
 			));
 			$this->phpass	=& $CI->phpass;
+
+			return;
 		}
+
+		log_message('error', lang('bitauth_instance_na'));
+		show_error(lang('bitauth_instance_na'));
+
 	 }
 
 }

@@ -64,8 +64,8 @@ $config['pwd_max_length'] = 20;
  * Default: 1, 1, 0
  */
 $config['pwd_complexity'] = array(
-	'uppercase' => 1,
-	'number' => 1,
+	'uppercase' => 0,
+	'number' => 0,
 	'special' => 0
 );
 
@@ -88,16 +88,24 @@ $config['pwd_complexity_chars'] = array(
 $config['log_logins'] = TRUE;
 
 /**
- * Number of invalid logins before account is locked
+ * Number of invalid logins before account is locked.
+ * Set this to 0 to disable this functionality.
  * Default: 3
  */
 $config['invalid_logins'] = 3;
 
 /**
+ * Number of minutes between invalid login attemps where a user will be locked
+ * out
+ * Default: 5
+ */
+$config['mins_login_attempts'] = 5;
+
+/**
  * Number of minutes before a locked account is unlocked.
  * Default: 10
  */
-$config['lockout_time'] = 10;
+$config['mins_locked_out'] = 10;
 
 /**
  * Tables used by BitAuth

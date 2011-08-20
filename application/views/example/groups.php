@@ -9,12 +9,12 @@
 		#table td, #table th { border: 1px solid #666; border-left: 0; border-bottom: 0; padding: 4px; text-align: left; }
 		#table caption { font-size: 1.4em; font-weight: bold; }
 	</style>
-	<title>BitAuth: Users</title>
+	<title>BitAuth: Groups</title>
 </head>
 <body>
 	<?php
 		echo '<table border="0" cellspacing="0" cellpadding="0" id="table">';
-		echo '<caption>BitAuth Example</caption>';
+		echo '<caption>BitAuth Example: Groups</caption>';
 		echo '<tr><th width="1">ID</th><th>Name</th><th>Description</th><th>Actions</th></tr>';
 		foreach($groups as $_group)
 		{

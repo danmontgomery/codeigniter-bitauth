@@ -11,7 +11,7 @@ class MY_Form_validation extends CI_Form_validation
 	{
 		if( ! $this->CI->bitauth->username_is_unique($username, $exclude_id))
 		{
-			$this->set_message('bitauth_unique_username', $this->CI->bitauth->get_error());
+			$this->set_message('bitauth_unique_username', $this->CI->bitauth->get_error(FALSE));
 			return FALSE;
 		}
 
@@ -26,7 +26,7 @@ class MY_Form_validation extends CI_Form_validation
 	{
 		if( ! $this->CI->bitauth->group_is_unique($group_name, $exclude_id))
 		{
-			$this->set_message('bitauth_unique_group', $this->CI->bitauth->get_error());
+			$this->set_message('bitauth_unique_group', $this->CI->bitauth->get_error(FALSE));
 			return FALSE;
 		}
 
@@ -41,22 +41,10 @@ class MY_Form_validation extends CI_Form_validation
 	{
 		if( ! $this->CI->bitauth->password_is_valid($password))
 		{
-			$this->set_message('bitauth_valid_password', $this->CI->bitauth->get_error());
+			$this->set_message('bitauth_valid_password', $this->CI->bitauth->get_error(FALSE));
 			return FALSE;
 		}
 
 		return TRUE;
 	}
-
-	/**
-	 * MY_Form_validation::set_error_delimiters()
-	 *
-	 */
-	public function set_error_delimiters($prefix = '<p>', $suffix = '</p>')
-	{
-		$this->CI->bitauth->set_error_delimiters($prefix, $suffix);
-
-		return parent::set_error_delimiters($prefix, $suffix);
-	}
-
 }

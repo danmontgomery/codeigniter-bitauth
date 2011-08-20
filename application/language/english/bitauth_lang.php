@@ -17,7 +17,7 @@ $lang['bitauth_pwd_special']		= 'Special Characters';
  */
 $lang['bitauth_login_failed']		= 'Invalid %s or Password';
 $lang['bitauth_user_inactive']		= 'You must activate this account before you can login.';
-$lang['bitauth_user_locked_out']	= 'This account has been locked out.';
+$lang['bitauth_user_locked_out']	= 'You have been locked out for %d minutes for too many invalid login attempts, please try again later.';
 $lang['bitauth_pwd_expired']		= 'Your password has expired.';
 
 /**
@@ -40,7 +40,8 @@ $lang['bitauth_groupname_required']	= 'Group name is required.';
 /**
  * General Error Messages
  */
-$lang['bitauth_data_error']			= 'You can\'t overwrite default BitAuth properties with custom userdata. Please change the name of the field: ';
+$lang['bitauth_instance_na']		= "BitAuth was unable to get the CodeIgniter instance.";
+$lang['bitauth_data_error']			= 'You can\'t overwrite default BitAuth properties with custom userdata. Please change the name of the field: %s';
 $lang['bitauth_enable_gmp']			= 'You must enable php_gmp to use Bitauth.';
 $lang['bitauth_user_not_found']		= 'User not found: %d';
 $lang['bitauth_activate_failed']	= 'Unable to activate user with this activation code.';
