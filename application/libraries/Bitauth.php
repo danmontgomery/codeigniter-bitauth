@@ -77,6 +77,7 @@ class Bitauth
 		// Specify any extra login fields
 		$this->_login_fields = array();
 
+		// If we're logged in, grab session values. If not, check for a "remember me" cookie
 		if($this->logged_in())
 		{
 			$this->get_session_values();
@@ -93,6 +94,7 @@ class Bitauth
 	/**
 	 * Bitauth::login()
 	 *
+	 * Process a login, either from username/password (+ extra fields) or a "remember me" cookie
 	 */
 	public function login($username, $password, $remember = FALSE, $extra = array(), $token = NULL)
 	{
@@ -120,6 +122,7 @@ class Bitauth
 					return FALSE;
 				}
 
+				// Inactive
 				if( ! $user->active)
 				{
 					$this->log_attempt($user->user_id, FALSE);
@@ -127,6 +130,7 @@ class Bitauth
 					return FALSE;
 				}
 
+				// Expired password
 				if($this->password_is_expired($user))
 				{
 					$this->log_attempt($user->user_id, FALSE);
@@ -173,6 +177,7 @@ class Bitauth
 	/**
 	 * Bitauth::login_from_token()
 	 *
+	 * Tries to login from a "remember me" cookie
 	 */
 	public function login_from_token()
 	{
@@ -194,6 +199,7 @@ class Bitauth
 	/**
 	 * Bitauth::logout()
 	 *
+	 * Logs out, destroys session, etc
 	 */
 	public function logout()
 	{
@@ -215,6 +221,7 @@ class Bitauth
 	/**
 	 * Bitauth::check_login_fields()
 	 *
+	 * Processes any extra login fields that were specified 
 	 */
 	public function check_login_fields($user, $data)
 	{
@@ -245,6 +252,7 @@ class Bitauth
 	/**
 	 * Bitauth::add_login_field()
 	 *
+	 * Declare an extra login field that must be checked on login
 	 */
 	public function add_login_field($field)
 	{
@@ -273,6 +281,7 @@ class Bitauth
 	/**
 	 * Bitauth::locked_out()
 	 *
+	 * Checks bad logins against invalid_logins and mins_login_attempts (config)
 	 */
 	public function locked_out()
 	{
@@ -307,6 +316,7 @@ class Bitauth
 	/**
 	 * Bitauth::log_attempt()
 	 *
+	 * Logs a login attempt
 	 */
 	public function log_attempt($user_id, $success = FALSE)
 	{
@@ -329,6 +339,7 @@ class Bitauth
 	/**
 	 * Bitauth::set_session_values()
 	 *
+	 * Set values to be saved in the session (should be coming from get_user_by_x)
 	 */
 	public function set_session_values($values)
 	{
@@ -354,6 +365,7 @@ class Bitauth
 	/**
 	 * Bitauth::get_session_values()
 	 *
+	 * Retrieves session values and assigns them to the object
 	 */
 	public function get_session_values()
 	{
@@ -387,6 +399,7 @@ class Bitauth
 	/**
 	 * Bitauth::update_remember_token()
 	 *
+	 * Sets or Updates the "remember me" cookie
 	 */
 	public function update_remember_token($username = NULL, $user_id = NULL)
 	{
@@ -423,6 +436,7 @@ class Bitauth
 	/**
 	 * Bitauth::delete_remember_token()
 	 *
+	 * Deletes the "remember me" cookie (called on logout)
 	 */
 	public function delete_remember_token()
 	{
@@ -451,6 +465,7 @@ class Bitauth
 	/**
 	 * Bitauth::add_user()
 	 *
+	 * Add a user
 	 */
 	public function add_user($data, $require_activation = NULL)
 	{
@@ -554,6 +569,7 @@ class Bitauth
 	/**
 	 * Bitauth::add_group()
 	 *
+	 * Add a group
 	 */
 	public function add_group($data)
 	{
@@ -633,6 +649,7 @@ class Bitauth
 	/**
 	 * Bitauth::activate()
 	 *
+	 * Activate a user
 	 */
 	public function activate($activation_code)
 	{
@@ -648,6 +665,7 @@ class Bitauth
 	/**
 	 * Bitauth::update_user()
 	 *
+	 * Update a user
 	 */
 	public function update_user($id, $data)
 	{
@@ -744,6 +762,7 @@ class Bitauth
 	/**
 	 * Bitauth::enable()
 	 *
+	 * Enable a user
 	 */
 	public function enable($user_id)
 	{
@@ -753,6 +772,7 @@ class Bitauth
 	/**
 	 * Bitauth::disable()
 	 *
+	 * Disable a user
 	 */
 	public function disable($user_id, $enabled = 0)
 	{
@@ -768,6 +788,7 @@ class Bitauth
 	/**
 	 * Bitauth::delete()
 	 *
+	 * "Delete" a user (remove from groups, disable, and delete userdata)
 	 */
 	public function delete($user_id)
 	{
@@ -796,15 +817,18 @@ class Bitauth
 	/**
 	 * Bitauth::forgot_password()
 	 *
+	 * Generate and store a "forgot password code"
 	 */
 	public function forgot_password($user_id)
 	{
 		if($user = $this->get_user_by_id($user_id))
 		{
-			$user->forgot_code = $this->generate_code();
-			$user->forgot_generated = $this->timestamp();
+			$forgot_code = $this->generate_code();
 
-			return $this->update_user($user_id, $user);
+			if($this->update_user($user_id, array('forgot_code' => $forgot_code, 'forgot_generated' => $this->timestamp())))
+			{
+				return $forgot_code;
+			}
 		}
 
 		return FALSE;
@@ -813,6 +837,7 @@ class Bitauth
 	/**
 	 * Bitauth::set_password()
 	 *
+	 * Sets a new password (should already be hashed)
 	 */
 	public function set_password($user_id, $new_password)
 	{
@@ -821,13 +846,14 @@ class Bitauth
 			return TRUE;
 		}
 
-		//$this->set_error($this->lang->line('bitauth_set_pw_failed'));
+		$this->set_error($this->lang->line('bitauth_set_pw_failed'));
 		return FALSE;
 	}
 
 	/**
 	 * Bitauth::update_group()
 	 *
+	 * Update a group
 	 */
 	public function update_group($id, $data)
 	{
@@ -911,6 +937,7 @@ class Bitauth
 	/**
 	 * Bitauth::delete_group()
 	 *
+	 * Delete a group, remove all members
 	 */
 	public function delete_group($group_id)
 	{
@@ -933,6 +960,7 @@ class Bitauth
 	/**
 	 * Bitauth::has_role()
 	 *
+	 * Check if a user or group has a role
 	 */
 	public function has_role($slug, $mask = NULL)
 	{
@@ -967,6 +995,7 @@ class Bitauth
 	/**
 	 * Bitauth::is_admin()
 	 *
+	 * Check if a user or group has the administrator role
 	 */
 	public function is_admin($mask = NULL)
 	{
@@ -976,6 +1005,7 @@ class Bitauth
 	/**
 	 * Bitauth::get_role()
 	 *
+	 * Return index of a role by it's slug
 	 */
 	public function get_role($slug)
 	{
@@ -985,6 +1015,7 @@ class Bitauth
 	/**
 	 * Bitauth::get_roles()
 	 *
+	 * Get all roles
 	 */
 	public function get_roles()
 	{
@@ -994,6 +1025,7 @@ class Bitauth
 	/**
 	 * Bitauth::username_is_unique()
 	 *
+	 * Checks if username is unique
 	 */
 	public function username_is_unique($username, $exclude_user = FALSE)
 	{
@@ -1015,6 +1047,7 @@ class Bitauth
 	/**
 	 * Bitauth::group_is_unique()
 	 *
+	 * Checks if group name is unique
 	 */
 	public function group_is_unique($group_name, $exclude_group = FALSE)
 	{
@@ -1036,6 +1069,7 @@ class Bitauth
 	/**
 	 * Bitauth::password_is_valid()
 	 *
+	 * Checks if password meets complexity requirements
 	 */
 	public function password_is_valid($password)
 	{
@@ -1066,6 +1100,7 @@ class Bitauth
 	/**
 	 * Bitauth::password_almost_expired()
 	 *
+	 * Checks if password expiration is within pwd_age_notification days
 	 */
 	public function password_almost_expired($user = NULL)
 	{
@@ -1093,6 +1128,7 @@ class Bitauth
 	/**
 	 * Bitauth::password_is_expired()
 	 *
+	 * Checks if password has expired
 	 */
 	public function password_is_expired($user = NULL)
 	{
@@ -1120,6 +1156,7 @@ class Bitauth
 	/**
 	 * Bitauth::get_users()
 	 *
+	 * Get all users
 	 */
 	public function get_users($include_disabled = FALSE)
 	{
@@ -1160,6 +1197,7 @@ class Bitauth
 	/**
 	 * Bitauth::get_user_by_username()
 	 *
+	 * Get a user by unique username
 	 */
 	public function get_user_by_username($username, $include_disabled = FALSE)
 	{
@@ -1177,6 +1215,7 @@ class Bitauth
 	/**
 	 * Bitauth::get_user_by_id()
 	 *
+	 * Get a user by unique ID
 	 */
 	public function get_user_by_id($id, $include_disabled = TRUE)
 	{
@@ -1194,6 +1233,7 @@ class Bitauth
 	/**
 	 * Bitauth::get_user_by_activation_code()
 	 *
+	 * Get a user by activation code
 	 */
 	public function get_user_by_activation_code($activation_code)
 	{
@@ -1211,6 +1251,7 @@ class Bitauth
 	/**
 	 * Bitauth::get_user_by_forgot_code()
 	 *
+	 * Get a user by forgot code
 	 */
 	public function get_user_by_forgot_code($forgot_code)
 	{
@@ -1237,6 +1278,7 @@ class Bitauth
 	/**
 	 * Bitauth::get_groups()
 	 *
+	 * Get all groups
 	 */
 	public function get_groups()
 	{
@@ -1266,6 +1308,7 @@ class Bitauth
 	/**
 	 * Bitauth::get_group_by_name()
 	 *
+	 * Get a group by unique group name
 	 */
 	public function get_group_by_name($group_name)
 	{
@@ -1283,6 +1326,7 @@ class Bitauth
 	/**
 	 * Bitauth::get_group_by_id()
 	 *
+	 * Get a group by unique ID
 	 */
 	public function get_group_by_id($id)
 	{
@@ -1300,6 +1344,7 @@ class Bitauth
 	/**
 	 * Bitauth::set_error()
 	 *
+	 * Sets an error message
 	 */
 	public function set_error($str, $update_session = TRUE)
 	{
@@ -1314,6 +1359,7 @@ class Bitauth
 	/**
 	 * Bitauth::get_error()
 	 *
+	 * Get the error message
 	 */
 	public function get_error($incl_delim = TRUE)
 	{
@@ -1328,6 +1374,7 @@ class Bitauth
 	/**
 	 * Bitauth::set_error_delimiters()
 	 *
+	 * Set what get_error() is wrapped with
 	 */
 	public function set_error_delimiters($prefix, $suffix)
 	{
@@ -1338,6 +1385,7 @@ class Bitauth
 	/**
 	 * Bitauth::hash_password()
 	 *
+	 * Hash a cleartext password
 	 */
 	public function hash_password($str)
 	{
@@ -1347,6 +1395,7 @@ class Bitauth
 	/**
 	 * Bitauth::generate_code()
 	 *
+	 * Generate a random code (for activation and forgot password)
 	 */
 	public function generate_code()
 	{
@@ -1356,6 +1405,7 @@ class Bitauth
 	/**
 	 * Bitauth::logged_in()
 	 *
+	 * User is logged in?
 	 */
 	public function logged_in()
 	{
@@ -1365,6 +1415,7 @@ class Bitauth
 	/**
 	 * Bitauth::complexity_requirements()
 	 *
+	 * Outputs password complexity rules
 	 */
 	public function complexity_requirements($separator = ', ')
 	{
@@ -1384,6 +1435,7 @@ class Bitauth
 	/**
 	 * Bitauth::timestamp()
 	 *
+	 * Return a timestamp based on config settings
 	 */
 	public function timestamp($time = NULL, $format = NULL)
 	{
@@ -1407,6 +1459,7 @@ class Bitauth
 	/**
 	 * Bitauth::_assign_libraries()
 	 *
+	 * Grab everything from the CI superobject that we need
 	 */
 	 public function _assign_libraries()
 	 {

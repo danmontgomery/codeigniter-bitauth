@@ -79,6 +79,46 @@ if($user->active == FALSE)
 {
     echo $user->activation_code;
 }</pre>
+
+<h2>Adding Password Complexity Rules</h2>
+<p>In order to add your own password complexity rules, you need to make 3 changes.</p>
+<p>In config/bitauth.php, you need to add a line to both $config['pwd_complexity'] and $config['pwd_complexity_chars']. pwd_complexity contains the required number of characters, and pwd_complexity_chars contains the regular expression to check for those characters.</p>
+<pre>/**
+ * Optional password complexity options. Set a number for each to
+ * require that many characters, or set to 0 to disable
+ * Default: 1, 1, 0, 0
+ */
+$config['pwd_complexity'] = array(
+	'uppercase' => 1,
+	'number' => 1,
+	'special' => 0,
+	'spaces' => 0,
+	<dfn>'dash'</dfn> => 1
+);
+
+/**
+ * Which characters are included in each complexity check. Must be in
+ * regex-friendly format. Using the Posix Collating Sequences should make these
+ * language-independent, but are here in case you want to change them.
+ */
+$config['pwd_complexity_chars'] = array(
+	'uppercase' => '[[:upper:]]',
+	'number' => '[[:digit:]]',
+	'special' => '[[:punct:]]',
+	'spaces' => '\s',
+	<dfn>'dash'</dfn> => '-'
+);</pre>
+
+<p>Then, you just need to add a line to language/english/bitauth_lang.php, which contains the language line called when the rule fails validation.</p>
+<pre>/**
+ * Password Complexity Labels
+ */
+$lang['bitauth_pwd_uppercase']    = 'Uppercase Letters';
+$lang['bitauth_pwd_number']       = 'Numbers';
+$lang['bitauth_pwd_special']      = 'Special Characters';
+$lang['bitauth_pwd_spaces']       = 'Spaces';
+$lang['bitauth_pwd_<dfn>dash</dfn>']	  = 'Dashes';
+
 </div>
 <!-- END CONTENT -->
 
