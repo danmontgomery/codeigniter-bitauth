@@ -1295,7 +1295,6 @@ class Bitauth
 			foreach($result as $row)
 			{
 				$row->members = explode('|', $row->members);
-				$row->roles = $this->encrypt->encode($row->roles);
 				$ret[] = $row;
 			}
 
