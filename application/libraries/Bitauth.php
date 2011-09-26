@@ -206,7 +206,7 @@ class Bitauth
 		$session_data = $this->session->all_userdata();
 		foreach($session_data as $_key => $_value)
 		{
-			if(substr($_key, 0, strlen($this->_cookie_elem_prefix)) !== $this->_cookie_elem_prefix)
+			if(substr($_key, 0, strlen($this->_cookie_elem_prefix)) == $this->_cookie_elem_prefix)
 			{
 				$this->session->unset_userdata($_key);
 			}
