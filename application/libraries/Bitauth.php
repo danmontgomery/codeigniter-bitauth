@@ -1174,7 +1174,7 @@ class Bitauth
 			->join($this->_table['assoc'].' assoc', 'assoc.user_id = users.user_id', 'left')
 			->join($this->_table['groups'].' groups', 'groups.group_id = assoc.group_id', 'left')
 			->group_by('users.user_id')
-			->get($this->_table['users'].' users');
+			->get($this->_table['users'].' '.$this->db->dbprefix.'users');
 
 		if($query && $query->num_rows())
 		{
@@ -1286,7 +1286,7 @@ class Bitauth
 			->select('groups.*, GROUP_CONCAT(assoc.user_id SEPARATOR "|") AS members')
 			->join($this->_table['assoc'].' assoc', 'assoc.group_id = groups.group_id', 'left')
 			->group_by('groups.group_id')
-			->get($this->_table['groups'].' groups');
+			->get($this->_table['groups'].' '.$this->db->dbprefix.'groups');
 
 		if($query && $query->num_rows())
 		{
