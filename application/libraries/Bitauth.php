@@ -599,19 +599,19 @@ class Bitauth
 			unset($data['members']);
 		}
 
-		$roles = gmp_init(0);
+		$roles = 0;
 		if(isset($data['roles']) && is_array($data['roles']))
 		{
 			foreach($data['roles'] as $slug)
 			{
 				if(($index = $this->get_role($slug)) !== FALSE)
 				{
-					gmp_setbit($roles, $index);
+					$this->_set_bit($roles, $index);
 				}
 			}
 		}
 
-		$data['roles'] = gmp_strval($roles);
+		$data['roles'] = $roles;
 
 		$this->db->trans_start();
 
@@ -875,8 +875,7 @@ class Bitauth
 			unset($data['members']);
 		}
 
-		$roles = gmp_init(0);
-
+		$roles = 0;
 		if(isset($data['roles']))
 		{
 			if(is_array($data['roles']))
@@ -885,17 +884,17 @@ class Bitauth
 				{
 					if(($index = $this->get_role($slug)) !== FALSE)
 					{
-						gmp_setbit($roles, $index);
+						$this->_set_bit($roles, $index);
 					}
 				}
 			}
 			else if(is_numeric($data['roles']))
 			{
-				$roles = gmp_init($data['roles']);
+				$roles = $data['roles'];
 			}
 		}
 
-		$data['roles'] = gmp_strval($roles);
+		$data['roles'] = $roles;
 
 		$this->db->trans_start();
 
@@ -982,11 +981,8 @@ class Bitauth
 			{
 				return TRUE;
 			}
-
-			$check = gmp_init(0);
-			gmp_setbit($check, $index);
-
-			return gmp_strval(gmp_and($mask, $check)) === gmp_strval($check);
+			
+			return $this->_check_bit($mask, $index);
 		}
 
 		return FALSE;
@@ -1009,7 +1005,7 @@ class Bitauth
 	 */
 	public function get_role($slug)
 	{
-		return array_search($slug, array_keys($this->_all_roles));
+		return array_search($slug, array_keys($this->get_roles()));
 	}
 
 	/**
@@ -1169,7 +1165,7 @@ class Bitauth
 			->select('users.*')
 			->select('userdata.*')
 			->select('GROUP_CONCAT(assoc.group_id SEPARATOR "|") AS groups')
-			->select('BIT_OR(groups.roles) AS roles')
+			->select('GROUP_CONCAT(groups.roles SEPARATOR "|") AS roles')
 			->join($this->_table['data'].' userdata', 'userdata.user_id = users.user_id', 'left')
 			->join($this->_table['assoc'].' assoc', 'assoc.user_id = users.user_id', 'left')
 			->join($this->_table['groups'].' groups', 'groups.group_id = assoc.group_id', 'left')
@@ -1182,7 +1178,13 @@ class Bitauth
 			$result = $query->result();
 			foreach($result as $row)
 			{
+				$roles = 0;
 				$row->groups = explode('|', $row->groups);
+				if( ! empty($row->roles))
+				{
+					$this->_or_bits($roles, explode('|', $row->roles));
+				}
+				$row->roles = $roles;
 				$row->last_login_ip = long2ip($row->last_login_ip);
 
 				$ret[] = $row;
@@ -1456,6 +1458,95 @@ class Bitauth
 	}
 
 	/**
+	 * Bitauth::_or_bits()
+	 *
+	 */
+	protected function _or_bits(&$mask, $set)
+	{
+		if(is_array($set))
+		{
+			foreach($set as $_set)
+			{
+				$this->_or_bits($mask, $_set);
+			}
+
+			return TRUE;
+		}
+
+		$bits = $this->_find_bits(trim($set));
+		foreach($bits as $_offset)
+		{
+			$this->_set_bit($mask, $_offset);
+		}
+
+		return TRUE;
+	}
+
+	/**
+	 * Bitauth::_set_bit()
+	 *
+	 */
+	protected function _set_bit(&$mask, $idx)
+	{
+		if(is_array($idx))
+		{
+			foreach($idx as $_idx)
+			{
+				$this->_set_bit($mask, $_idx);
+			}
+
+			return TRUE;
+		}
+
+		$idx++;
+		
+		if(strlen($mask) < $idx)
+		{
+			$mask = str_pad($mask, $idx, '0', STR_PAD_LEFT);
+		}
+
+		$mask = substr_replace($mask, '1', '-'.$idx, 1);
+	}
+
+	/**
+	 * Bitauth::_check_bit()
+	 *
+	 */
+	protected function _check_bit($mask, $idx)
+	{
+		return strlen($mask) > $idx && (substr($mask, '-'.++$idx, 1) === '1');
+	}
+
+	/**
+	 * Bitauth::_find_bits()
+	 *
+	 */
+	protected function _find_bits($string, $find = '1')
+	{
+		$ret = array();
+		$string = strrev($string);
+
+		for($i = 0; $i < strlen($string); $i++)
+		{
+			if(substr($string, $i, 1) === '1')
+			{
+				$ret[] = $i;
+			}
+		}
+
+		return $ret;
+	}
+
+	/**
+	 * Bitauth::convert()
+	 *
+	 */
+	public function convert($old)
+	{
+		return base_convert($old, 10, 2);
+	}
+
+	/**
 	 * Bitauth::_assign_libraries()
 	 *
 	 * Grab everything from the CI superobject that we need
@@ -1479,13 +1570,6 @@ class Bitauth
 			$this->db		= $CI->db;
 
 			$this->lang->load('bitauth');
-
-			if( ! function_exists('gmp_init'))
-			{
-				log_message('error', $this->lang->line('bitauth_enable_gmp'));
-				show_error($this->lang->line('bitauth_enable_gmp'));
-			}
-
 			$this->load->config('bitauth', TRUE);
 
 			// Load Phpass library
