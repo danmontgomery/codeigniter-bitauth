@@ -8,7 +8,7 @@
 * PHP 5.1.6+, 5.3+ recommended
 * CodeIgniter 2.0+
 * MySQL
-* <s>php-gmp</s>
+* ~~php-gmp~~
 
 ##Features
 * Phpass Integration: BitAuth uses [phpass](http://www.openwall.com/phpass/) to handle password hashing
