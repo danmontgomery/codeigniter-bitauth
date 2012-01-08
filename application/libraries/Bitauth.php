@@ -702,7 +702,7 @@ class Bitauth
 			}
 		}
 
-		if(isset($data['password']))
+		if(isset($data['password']) AND $data['password'] != '')
 		{
 			$new_password = $this->hash_password($data['password']);
 
