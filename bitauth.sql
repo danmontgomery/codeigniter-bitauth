@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS `bitauth_groups` (
   `group_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(48) NOT NULL,
   `description` text NOT NULL,
-  `roles` bigint(20) unsigned NOT NULL DEFAULT '0',
+  `roles` text NOT NULL,
   PRIMARY KEY (`group_id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=3 ;
 

@@ -21,6 +21,32 @@ class Example extends CI_Controller
 	}
 
 	/**
+	 * Example::convert()
+	 *
+	 */
+	public function convert()
+	{
+		$this->load->dbforge();
+		$this->dbforge->modify_column($this->bitauth->_table['groups'], array(
+			'roles' => array(
+				'name' => 'roles',
+				'type' => 'text'
+			)
+		));
+
+		$query = $this->db->select('group_id, roles')->get($this->bitauth->_table['groups']);
+		if($query && $query->num_rows())
+		{
+			foreach($query->result() as $row)
+			{
+				$this->db->where('group_id', $row->group_id)->set('roles', $this->bitauth->convert($row->roles))->update($this->bitauth->_table['groups']);
+			}
+		}
+
+		echo 'Update complete.';
+	}
+
+	/**
 	 * Example::login()
 	 *
 	 */
