@@ -563,7 +563,7 @@ class Bitauth
 		}
 
 		$this->db->trans_commit();
-		return TRUE;
+		return $this->get_user_by_id($user_id);
 	}
 
 	/**
@@ -643,7 +643,7 @@ class Bitauth
 		}
 
 		$this->db->trans_commit();
-		return TRUE;
+		return $this->get_group_by_id($group_id);
 	}
 
 	/**
