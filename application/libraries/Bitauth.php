@@ -702,14 +702,18 @@ class Bitauth
 			}
 		}
 
-		if(isset($data['password']))
+		if(isset($data['password']) AND $data['password'] != '')
 		{
 			$new_password = $this->hash_password($data['password']);
 
 			$data['password'] = $new_password;
 			$data['password_last_set'] = $this->timestamp();
 		}
-
+		else
+		{
+			unset($data['password']);
+		}
+		
 		$this->db->trans_start();
 
 		if( ! empty($data))
