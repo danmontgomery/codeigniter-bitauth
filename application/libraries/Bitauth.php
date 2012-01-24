@@ -325,7 +325,7 @@ class Bitauth
 
 			$data = array(
 				'ip_address' => ip2long($_SERVER['REMOTE_ADDR']),
-				'user_id' => $user_id,
+				'user_id' => (empty($user_id) ? 0 : $user_id),
 				'success' => (int)$success,
 				'time' => $this->timestamp()
 			);
