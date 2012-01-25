@@ -530,11 +530,9 @@ class Bitauth
 		$this->db->insert($this->_table['users'], $data);
 
 		$user_id = $this->db->insert_id();
-		if( ! empty($userdata))
-		{
-			$userdata['user_id'] = $user_id;
-			$this->db->insert($this->_table['data'], $userdata);
-		}
+		$userdata['user_id'] = $user_id;
+
+		$this->db->insert($this->_table['data'], $userdata);
 
 		if(empty($groups))
 		{
@@ -801,7 +799,10 @@ class Bitauth
 			$this->db->trans_start();
 
 			$this->update_user($user_id, array('enabled' => 0, 'groups' => array()));
+
+			// Delete userdata and recreate with no data
 			$this->db->where('user_id', $user_id)->delete($this->_table['data']);
+			$this->db->insert($this->_table['data'], array('user_id' => $user_id));
 
 			if($this->db->trans_status() == FALSE)
 			{
