@@ -700,7 +700,7 @@ class Bitauth
 			}
 		}
 
-		if(isset($data['password']) AND $data['password'] != '')
+		if( ! empty($data['password']))
 		{
 			$new_password = $this->hash_password($data['password']);
 
@@ -709,6 +709,7 @@ class Bitauth
 		}
 		else
 		{
+			// Will always be set, but empty, if passing POST directly
 			unset($data['password']);
 		}
 		

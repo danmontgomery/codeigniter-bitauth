@@ -24,7 +24,7 @@
 * Text-based roles: Simply list your roles in the configuration file, then check against them in your code. BitAuth handles everything in between.
 
 ##Download
-[https://github.com/danmontgomery/codeigniter-bitauth/tarball/v0.2.0](https://github.com/danmontgomery/codeigniter-bitauth/tarball/v0.2.0)
+[https://github.com/danmontgomery/codeigniter-bitauth/tarball/v0.2.1](https://github.com/danmontgomery/codeigniter-bitauth/tarball/v0.2.1)
 
 ##Installation
 Copy the included files to their appropriate locations in the application/ folder. Import bitauth.sql into your database. **If you would like to change the names of the tables BitAuth uses, you can change them in this .sql file, and must also change them in config/bitauth.php**.
@@ -37,6 +37,6 @@ As of v0.2.0, php-gmp is no longer used. The structure of the bitauth_groups tab
 
 The default login is **admin**/**admin**.
 
-It is **highly** recommended you enable db sessions.
+I **highly** recommend you not use the default cookie session... [Try my driver replacement](http://getsparks.org/packages/session-driver/show) for CI's session library (end of shameless self promotion).
 
 Currently, only MySQL is supported. This may change in the future. Or not. We'll see.
