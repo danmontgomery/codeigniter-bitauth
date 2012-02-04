@@ -7,6 +7,7 @@
 ##Requirements
 * PHP 5.1.6+, 5.3+ recommended
 * CodeIgniter 2.0+
+* CodeIgniter Sparks
 * MySQL
 * ~~php-gmp~~
 
@@ -23,11 +24,12 @@
 * Groups and Roles: Create groups, and assign users to your groups. Your roles are set on a group, not a user, so changing roles, whether the scale is large or small, is fast and painless.
 * Text-based roles: Simply list your roles in the configuration file, then check against them in your code. BitAuth handles everything in between.
 
-##Download
-[https://github.com/danmontgomery/codeigniter-bitauth/tarball/v0.2.1](https://github.com/danmontgomery/codeigniter-bitauth/tarball/v0.2.1)
-
 ##Installation
-Copy the included files to their appropriate locations in the application/ folder. Import bitauth.sql into your database. **If you would like to change the names of the tables BitAuth uses, you can change them in this .sql file, and must also change them in config/bitauth.php**.
+	php tools/spark install bitauth
+Import bitauth.sql into your database. **If you would like to change the names of the tables BitAuth uses, you can change them in this .sql file, and must also change them in config/bitauth.php**.
+
+##Usage
+	$this->load->spark('bitauth/X.X.X');
 
 ##Updating
 If updating from v0.1.x, there is a convert() function in the Example controller. This will modify the structure of your groups table, as well as convert any roles you have stored to the new format. This function uses base_convert(), which means results may vary depending on the machine you're running this on. After upgrading, be sure to check the roles in your groups for accuracy.
