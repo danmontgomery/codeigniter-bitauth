@@ -525,7 +525,7 @@ class Bitauth
 		$data['password'] = $this->hash_password($data['password']);
 		$data['password_last_set'] = $this->timestamp();
 
-		$this->db->trans_start();
+		$this->db->trans_begin();
 
 		$this->db->insert($this->_table['users'], $data);
 
