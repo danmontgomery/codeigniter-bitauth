@@ -55,6 +55,10 @@ class Bitauth
 		$this->_remember_token_expires		= $this->config->item('remember_token_expires', 'bitauth');
 		$this->_remember_token_updates		= $this->config->item('remember_token_updates', 'bitauth');
 		$this->_require_user_activation		= $this->config->item('require_user_activation', 'bitauth');
+		$this->_email_activation			= $this->config->item('email_activation', 'bitauth');
+		$this->_activation_email_address	= $this->config->item('activation_email_address', 'bitauth');
+		$this->_locked_out_alert_message    = $this->config->item('locked_out_alert_message', 'bitauth');
+		$this->_locked_out_notify_address	= $this->config->item('locked_out_notify_address', 'bitauth');
 		$this->_pwd_max_age					= $this->config->item('pwd_max_age', 'bitauth');
 		$this->_pwd_age_notification		= $this->config->item('pwd_age_notification', 'bitauth');
 		$this->_pwd_min_length				= $this->config->item('pwd_min_length', 'bitauth');
@@ -306,6 +310,22 @@ class Bitauth
 			if($this->timestamp(strtotime($last->time), 'U') - $this->timestamp(strtotime($first->time), 'U') <= ($this->_mins_login_attempts * 60)
 				&& $this->timestamp(strtotime($last->time), 'U') >= $this->timestamp(strtotime($this->_mins_login_attempts.' minutes ago'), 'U'))
 			{
+				if($this->_locked_out_alert_message)
+				{
+					$config['useragent'] = 'bitauth';
+					$this->email_lib->initialize($config);
+					$this->email_lib->clear();
+					$this->email_lib->from($this->_locked_out_notify_address);
+					$this->email_lib->to($this->_locked_out_notify_address);
+					$this->email_lib->subject('Invalid login attempt on '.base_url());
+					$this->email_lib->message('User: '.$username.' IP address: '.$_SERVER['REMOTE_ADDR'].' Time: '.mdate("%Y-%m-%d %H:%i:%s", time()));
+
+					if( ! $this->email_lib->send())
+					{
+						log_message('error', 'Invalid login attempt email send failed.'.$this->email_lib->print_debugger());
+					}
+				}
+
 				return TRUE;
 			}
 		}
@@ -498,6 +518,11 @@ class Bitauth
 		if($require_activation)
 		{
 			$data['activation_code'] = $this->generate_code();
+
+			if($this->_email_activation)
+			{
+				$this->_send_email_activation($data['email'], $data['activation_code'], $data['username'], $data['password']);
+			}
 		}
 
 		// Just in case
@@ -838,6 +863,51 @@ class Bitauth
 		}
 
 		return FALSE;
+	}
+
+	/**
+	 * Bitauth::generate_forgot_code()
+	 *
+	 * Sends a generated forgot code to the give email address
+	 */
+	public function generate_forgot_code($email)
+	{
+		if( ! $user = $this->get_user_by_email($email))
+		{
+			return FALSE;	
+		}
+		$forgot_code = $this->forgot_password($user->user_id);
+			
+		$config['useragent'] = 'bitauth';
+		$this->email_lib->initialize($config);
+		$this->email_lib->clear();
+		$this->email_lib->from($this->_activation_email_address);
+		$this->email_lib->to($email);
+		$this->email_lib->subject($this->lang->line('bitauth_forgotpassword_email_subject'));
+		$this->email_lib->message(sprintf($this->lang->line('bitauth_forgotpassword_email_message'), 
+										                    '<a href="'.base_url().'example/change_password/'.$forgot_code.'">Click here to reset your password</a>'));
+
+		if( ! $this->email_lib->send())
+		{
+			log_message('error', $this->email_lib->print_debugger());
+			show_error($this->lang->line('bitauth_forgotpassword_email_send_error'));
+			exit;
+		}	
+	}
+
+	/**
+	 * Bitauth::save_new_password()
+	 *
+	 * Saves a newly entered password, and delete forgot_code
+	 */
+	public function save_new_password($password, $code)
+	{
+		if( ! $user = $this->get_user_by_forgot_code($code))
+		{
+			return FALSE;	
+		}
+		$this->set_password($user->user_id, $password);
+		$this->update_user($user->user_id, array('forgot_code' => ''));
 	}
 
 	/**
@@ -1572,6 +1642,9 @@ class Bitauth
 			$CI->load->library('encrypt');
 			$this->encrypt	= $CI->encrypt;
 
+			$CI->load->library('email');
+			$this->email_lib = $CI->email;
+
 			$this->load->database();
 			$this->db		= $CI->db;
 
@@ -1591,6 +1664,32 @@ class Bitauth
 		log_message('error', $this->lang->line('bitauth_instance_na'));
 		show_error($this->lang->line('bitauth_instance_na'));
 
+	 }
+
+	 /**
+	 * Bitauth::_send_email_activation()
+	 *
+	 * Send activation email to activate user account
+	 */	 
+	 public function _send_email_activation($user_email, $activation_code, $username, $password)
+	 {
+		$config['useragent'] = 'bitauth';
+		$this->email_lib->initialize($config);
+		$this->email_lib->clear();
+		$this->email_lib->from($this->_activation_email_address);
+		$this->email_lib->to($user_email);
+		$this->email_lib->subject($this->lang->line('bitauth_activation_email_subject'));
+		$this->email_lib->message(sprintf($this->lang->line('bitauth_activation_email_message'), 
+										$username,
+										$password,
+		                                '<a href="'.base_url().'example/activate/'.$activation_code.'">Click here to activate</a>'));
+
+		if( ! $this->email_lib->send())
+		{
+			log_message('error', $this->email_lib->print_debugger());
+			show_error($this->lang->line('bitauth_activation_email_send_error'));
+			exit;
+		}
 	 }
 
 }

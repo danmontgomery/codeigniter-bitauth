@@ -7,6 +7,27 @@
 $config['require_user_activation'] = TRUE;
 
 /**
+ * Email activation settings
+ *
+ */
+$config['email_activation'] = TRUE;
+$config['activation_email_address'] = 'info@example.com';
+
+/**
+*  Alert system administrator by email if lock out attempt happens	
+*
+*/
+$config['locked_out_alert_message'] = TRUE;
+$config['locked_out_notify_address'] = 'admin@example.com';
+
+/**
+*	Recapcha settings
+*
+*/
+$config['recaptcha_public_key'] = '';
+$config['recaptcha_private_key'] = '';
+
+/**
  * Default group_id users are added to when they first register (if one isn't
  * specified)
  * Default: 2

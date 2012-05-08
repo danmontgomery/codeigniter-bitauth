@@ -11,6 +11,9 @@ class Example extends CI_Controller
 	{
 		parent::__construct();
 
+		$this->_public_key = $this->config->item('recaptcha_public_key', 'bitauth');
+		$this->_private_key = $this->config->item('recaptcha_private_key', 'bitauth');
+
 		$this->load->library('bitauth');
 
 		$this->load->helper('form');
@@ -102,12 +105,30 @@ class Example extends CI_Controller
 		$this->load->view('example/users', array('bitauth' => $this->bitauth, 'users' => $this->bitauth->get_users()));
 	}
 
+	public function _recaptcha_check()
+	{
+		$resp = $this->recaptcha->recaptcha_check_answer($this->_private_key, $_SERVER["REMOTE_ADDR"], $this->input->post('recaptcha_challenge_field'),	$this->input->post('recaptcha_response_field'));
+
+		if( ! $resp->is_valid)
+		{
+			$this->form_validation->set_message('_recaptcha_check', $this->lang->line('bitauth_recaptcha_error'));
+			return FALSE;
+		}
+		else
+		{
+			return TRUE;
+		}
+	}
+
 	/**
 	* Example::register()
 	*
 	*/
 	public function register()
 	{
+		$this->load->library('Recaptcha');
+		$data['recaptcha'] = $this->recaptcha->recaptcha_get_html($this->_public_key);
+
 		if($this->input->post())
 		{
 			$this->form_validation->set_rules('username', 'Username', 'trim|required|bitauth_unique_username');
@@ -115,17 +136,60 @@ class Example extends CI_Controller
 			$this->form_validation->set_rules('email', 'Email', 'trim|required|valid_email');
 			$this->form_validation->set_rules('password', 'Password', 'required|bitauth_valid_password');
 			$this->form_validation->set_rules('password_conf', 'Password Confirmation', 'required|matches[password]');
+			$this->form_validation->set_rules('recaptcha_response_field', 'Captcha code', 'required|callback__recaptcha_check');
 
 			if($this->form_validation->run() == TRUE)
 			{
-				unset($_POST['submit'], $_POST['password_conf']);
+				unset($_POST['submit'], $_POST['password_conf'], $_POST['recaptcha_response_field'], $_POST['recaptcha_challenge_field']);
 				$this->bitauth->add_user($this->input->post());
 				redirect('example/login');
 			}
 
 		}
 
-		$this->load->view('example/add_user', array('title' => 'Register'));
+		$this->load->view('example/register', array('title' => 'Register'));
+	}
+
+	public function forgot_password()
+	{
+		if($this->input->post())
+		{
+			$this->form_validation->set_rules('email', 'Email', 'trim|required|valid_email');
+
+			if($this->form_validation->run() == TRUE)
+			{
+				$this->bitauth->generate_forgot_code($this->form_validation->set_value('email'));
+				redirect('example');
+			}
+		}
+
+		$this->load->view('example/forgot_password');
+	}
+
+  	/**
+	* Example::change_password()
+	*
+	*/
+	public function change_password($code = '')
+	{
+		if( ! $user = $this->bitauth->get_user_by_forgot_code($code))
+		{
+			redirect('example');
+		}
+
+		if($this->input->post())
+		{
+			$this->form_validation->set_rules('password', 'Password', 'required|bitauth_valid_password');
+			$this->form_validation->set_rules('password_conf', 'Password Confirmation', 'required|matches[password]');
+
+			if($this->form_validation->run() == TRUE)
+			{
+				$this->bitauth->save_new_password($this->form_validation->set_value('password'), $code);
+				redirect('example');
+			}
+		}
+
+		$this->load->view('example/change_password', array('forgot_code' => $code));
 	}
 
 	/**
