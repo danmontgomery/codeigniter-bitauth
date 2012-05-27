@@ -62,3 +62,23 @@ $lang['bitauth_edit_group_datatype']= '$data must be an array or an object in Bi
 $lang['bitauth_edit_group_failed']	= 'Updating group failed, please notify an administrator.';
 $lang['bitauth_del_group_failed']	= 'Deleting group failed, please notify an administrator.';
 $lang['bitauth_lang_not_found']		= '(No language entry for "%s" found!)';
+
+/**
+ *	Email Activation Messages
+ */
+$lang['bitauth_activation_email_subject']    = 'Activation email';
+$lang['bitauth_activation_email_message']    = 'Dear User,<br/><br/>Please click on the following link to activate your account!<br/><br/>Your account details:</br>Username: %s<br/>Password: %s<br/><br/>%s<br/><br/>Thank you';
+$lang['bitauth_activation_email_send_error'] = 'Could not send activation email, please contact the webmaster';
+
+/**
+ *	Forgot Password Messages
+ */
+$lang['bitauth_forgotpassword_email_subject']    = 'Forgotten password reset email';
+$lang['bitauth_forgotpassword_email_message']    = 'Dear User,<br/><br/>This is a password reset confirmation email.<br/><br/>%s';
+$lang['bitauth_forgotpassword_email_send_error'] = 'Could not send password reset email, please contact the webmaster';
+
+/**
+ *	Recatpcha Messages
+ */
+$lang['bitauth_recaptcha_error']      = 'Incorrect captcha code entered. Try again!';
+$lang['bitauth_recaptcha_regenerate'] = 'I can\'t read, please generate new captcha!';
