@@ -19,7 +19,7 @@
 
 	echo form_open(current_url());
 	echo form_label('Username','username');
-	echo form_input('username');
+	echo form_input(array('name' => 'username', 'value' => set_value('username'));
 	echo form_label('Password','password');
 	echo form_password('password');
 	echo form_label(form_checkbox('remember_me', 1).' Remember Me', 'remember_me');
