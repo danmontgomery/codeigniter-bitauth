@@ -57,6 +57,7 @@ class Bitauth
 		$this->_require_user_activation		= $this->config->item('require_user_activation', 'bitauth');
 		$this->_email_activation			= $this->config->item('email_activation', 'bitauth');
 		$this->_activation_email_address	= $this->config->item('activation_email_address', 'bitauth');
+		$this->_mailtype 				    = $this->config->item('mailtype', 'bitauth');
 		$this->_locked_out_alert_message    = $this->config->item('locked_out_alert_message', 'bitauth');
 		$this->_locked_out_notify_address	= $this->config->item('locked_out_notify_address', 'bitauth');
 		$this->_pwd_max_age					= $this->config->item('pwd_max_age', 'bitauth');
@@ -313,6 +314,7 @@ class Bitauth
 				if($this->_locked_out_alert_message)
 				{
 					$config['useragent'] = 'bitauth';
+					$config['mailtype'] = $this->_mailtype;
 					$this->email_lib->initialize($config);
 					$this->email_lib->clear();
 					$this->email_lib->from($this->_locked_out_notify_address);
@@ -879,6 +881,7 @@ class Bitauth
 		$forgot_code = $this->forgot_password($user->user_id);
 			
 		$config['useragent'] = 'bitauth';
+		$config['mailtype'] = $this->_mailtype;
 		$this->email_lib->initialize($config);
 		$this->email_lib->clear();
 		$this->email_lib->from($this->_activation_email_address);
@@ -1674,6 +1677,7 @@ class Bitauth
 	 public function _send_email_activation($user_email, $activation_code, $username, $password)
 	 {
 		$config['useragent'] = 'bitauth';
+		$config['mailtype'] = $this->_mailtype;
 		$this->email_lib->initialize($config);
 		$this->email_lib->clear();
 		$this->email_lib->from($this->_activation_email_address);

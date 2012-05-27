@@ -9,9 +9,11 @@ $config['require_user_activation'] = TRUE;
 /**
  * Email activation settings
  *
+ * Mailtype options: 'html', 'text'
  */
 $config['email_activation'] = TRUE;
 $config['activation_email_address'] = 'info@example.com';
+$config['mailtype'] = 'html';
 
 /**
 *  Alert system administrator by email if lock out attempt happens	
