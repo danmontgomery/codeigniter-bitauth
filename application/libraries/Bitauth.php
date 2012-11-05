@@ -147,7 +147,7 @@ class Bitauth
 
 				$data = array(
 					'last_login' => $this->timestamp(),
-					'last_login_ip' => ip2long($_SERVER['REMOTE_ADDR'])
+					'last_login_ip' => sprintf("%u", ip2long($_SERVER['REMOTE_ADDR']))
 				);
 
 				// If user logged in, they must have remembered their password.
@@ -292,7 +292,7 @@ class Bitauth
 		}
 
 		$query = $this->db
-			->where('ip_address', ip2long($_SERVER['REMOTE_ADDR']))
+			->where('ip_address', sprintf("%u", ip2long($_SERVER['REMOTE_ADDR'])))
 			->where('success', 0)
 			->limit($this->_invalid_logins)
 			->order_by('time', 'DESC')
@@ -324,7 +324,7 @@ class Bitauth
 		{
 
 			$data = array(
-				'ip_address' => ip2long($_SERVER['REMOTE_ADDR']),
+				'ip_address' => sprintf("%u",ip2long($_SERVER['REMOTE_ADDR'])),
 				'user_id' => (empty($user_id) ? 0 : $user_id),
 				'success' => (int)$success,
 				'time' => $this->timestamp()
