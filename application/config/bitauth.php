@@ -169,6 +169,10 @@ $config['roles'] = array(
  * Add as many roles here as you like.
  * Follow the format:
  * 'role_slug' => 'Role Description',
- */
- 	
+ */	
 );
+
+ /**
+  * GAuth window of opportunity when entering code
+  */
+ $config['gauth_range'] = 20;	

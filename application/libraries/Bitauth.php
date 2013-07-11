@@ -39,6 +39,9 @@ class Bitauth
 	private $_all_roles;
 	private $_error;
 
+	// GAuth Config
+	private $_time_range;
+
 	// IF YOU CHANGE THE STRUCTURE OF THE `users` TABLE, THAT CHANGE MUST BE REFLECTED HERE
 	private $_data_fields = array(
 		'username','password','password_last_set','password_never_expires','remember_me', 'activation_code',
@@ -69,13 +72,15 @@ class Bitauth
 		$this->_date_format					= $this->config->item('date_format', 'bitauth');
 
 		$this->_all_roles					= $this->config->item('roles', 'bitauth');
-
 		// Grab the first role on the list as the administrator role
 		$slugs = array_keys($this->_all_roles);
 		$this->_admin_role = $slugs[0];
 
 		// Specify any extra login fields
 		$this->_login_fields = array();
+
+		// Set GAuth time range on allowed codes
+		$this->_time_range					= $this->config->item('gauth_range', 'bitauth');
 
 		// If we're logged in, grab session values. If not, check for a "remember me" cookie
 		if($this->logged_in())
@@ -140,15 +145,10 @@ class Bitauth
 
 				$this->set_session_values($user);
 
-				if($remember != FALSE)
+				if($remember !== FALSE)
 				{
 					$this->update_remember_token($user->username, $user->user_id);
 				}
-
-				$data = array(
-					'last_login' => $this->timestamp(),
-					'last_login_ip' => ip2long($_SERVER['REMOTE_ADDR'])
-				);
 
 				// If user logged in, they must have remembered their password.
 				if( ! empty($user->forgot_code))
@@ -156,11 +156,22 @@ class Bitauth
 					$data['forgot_code'] = '';
 				}
 
-				// Update last login timestamp and IP
-				$this->update_user($user->user_id, $data);
+				if($user->google_auth)
+				{
+					return TRUE;
+				} else {
 
-				$this->log_attempt($user->user_id, TRUE);
-				return TRUE;
+					$data = array(
+						'last_login' => $this->timestamp(),
+						'last_login_ip' => ip2long($_SERVER['REMOTE_ADDR'])
+					);
+
+					// Update last login timestamp and IP
+					$this->update_user($user->user_id, $data);
+
+					$this->log_attempt($user->user_id, TRUE);
+					return TRUE;
+					}
 			}
 
 			$this->log_attempt($user->user_id, FALSE);
@@ -403,10 +414,14 @@ class Bitauth
 	 */
 	public function update_remember_token($username = NULL, $user_id = NULL)
 	{
-		if( ! $this->logged_in())
+		if( ! $this->session->userdata($this->_cookie_elem_prefix.'google_auth'))
 		{
-			return;
+			if( ! $this->logged_in())
+			{
+				return;
+			}
 		}
+
 
 		if($username === NULL)
 		{
@@ -524,6 +539,12 @@ class Bitauth
 
 		$data['password'] = $this->hash_password($data['password']);
 		$data['password_last_set'] = $this->timestamp();
+		if(isset($userdata['google_auth']))
+		{
+			$data['google_auth'] = 1;
+			unset($userdata['google_auth']);
+			$data['google_key'] = $this->generate_gauth_key();
+		}
 
 		$this->db->trans_begin();
 
@@ -699,6 +720,22 @@ class Bitauth
 				unset($data[$_key]);
 			}
 		}
+
+		if(isset($userdata['google_auth']))
+		{
+			if($userdata['google_auth'] == 1)
+			{
+				$data['google_auth'] = TRUE;
+				$data['google_key'] = $this->generate_gauth_key();
+				unset($userdata['google_auth']);
+			} else if ($userdata['google_auth'] == 0)
+			{
+				$data['google_auth'] = FALSE;
+				$data['google_key'] = '';
+				unset($userdata['google_auth']);
+			}
+		}
+		
 
 		if( ! empty($data['password']))
 		{
@@ -1349,6 +1386,77 @@ class Bitauth
 	}
 
 	/**
+	 * Bitauth::set_gauth_key()
+	 *
+	 * Set Google Authenticator secret key for user
+	 *
+	 */
+	public function set_gauth_key($user_id)
+	{
+
+	}
+
+	/**
+	 * Bitauth::set_gauth_key()
+	 *
+	 * Get Google Authenticator secret key by user id
+	 *
+	 */
+	public function get_gauth_key($user_id)
+	{
+		$query = $this->db->select('google_key')
+						->from('bitauth_users')
+						->where('user_id',$user_id)
+						->get();
+
+		$result = $query->row_array();
+		return $result['google_key'];
+	}
+
+	/**
+	 * Bitauth::generate_gauth_key()
+	 *
+	 * Generate Google Authenticator secret key
+	 *
+	 */
+	public function generate_gauth_key()
+	{
+		return $this->gauth->generateCode();
+	}
+
+	/**
+	 * Bitauth::generate_gauth_key()
+	 *
+	 * Validate Google Authenticator code
+	 *
+	 */
+	public function validate_gauth_code($code = '', $user_id = '')
+	{
+		$this->gauth->setRange($this->_time_range);
+		$this->gauth->setInitKey($this->get_gauth_key($user_id));
+		if ($this->gauth->validateCode($code))
+		{
+			$data = array(
+						'last_login' => $this->timestamp(),
+						'last_login_ip' => ip2long($_SERVER['REMOTE_ADDR'])
+					);
+
+			// Update last login timestamp and IP
+			$this->update_user($this->session->userdata($this->_cookie_elem_prefix.'user_id'),$data);
+
+			$this->log_attempt($this->session->userdata($this->_cookie_elem_prefix.'user_id'), TRUE);
+
+			$this->session->set_userdata($this->_cookie_elem_prefix.'google_code',$code);
+			return TRUE;
+		} else 
+		{
+			$this->set_error($this->lang->line('bitauth_invalid_token'));
+			$this->log_attempt($this->session->userdata($this->_cookie_elem_prefix.'user_id'), FALSE);
+			return FALSE;
+		}
+	}
+
+	/**
 	 * Bitauth::set_error()
 	 *
 	 * Sets an error message
@@ -1416,7 +1524,12 @@ class Bitauth
 	 */
 	public function logged_in()
 	{
-		return (bool)$this->session->userdata($this->_cookie_elem_prefix.'username');
+		if($this->session->userdata($this->_cookie_elem_prefix.'google_auth'))
+		{
+			return (bool)$this->session->userdata($this->_cookie_elem_prefix.'username') && (bool)$this->session->userdata($this->_cookie_elem_prefix.'google_code');
+		} else {
+			return (bool)$this->session->userdata($this->_cookie_elem_prefix.'username');
+		}
 	}
 
 	/**
@@ -1584,6 +1697,10 @@ class Bitauth
 				'portable_hashes' => $this->config->item('phpass_portable', 'bitauth')
 			));
 			$this->phpass	= $CI->phpass;
+
+			// Load GAuth library
+			$CI->load->library('GAuth');
+			$this->gauth 	= $CI->gauth;
 
 			return;
 		}
