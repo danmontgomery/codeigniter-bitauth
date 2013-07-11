@@ -62,3 +62,4 @@ $lang['bitauth_edit_group_datatype']= '$data must be an array or an object in Bi
 $lang['bitauth_edit_group_failed']	= 'Updating group failed, please notify an administrator.';
 $lang['bitauth_del_group_failed']	= 'Deleting group failed, please notify an administrator.';
 $lang['bitauth_lang_not_found']		= '(No language entry for "%s" found!)';
+$lang['bitauth_invalid_token']		= 'Invalid token!';

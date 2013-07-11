@@ -54,6 +54,24 @@ class Example extends CI_Controller
 	{
 		$data = array();
 
+		if($this->bitauth->login_from_token())
+		{
+			// Check if it passed two factor auth
+			if($this->bitauth->logged_in())
+			{
+				// Not require two factor auth
+				if($redir = $this->session->userdata('redir'))
+				{
+					$this->session->unset_userdata('redir');
+				}
+
+				redirect($redir ? $redir : 'example');
+			} else {
+				// Redirect to enter challange code
+				redirect('example/twofactorauth');
+			}
+		}
+
 		if($this->input->post())
 		{
 			$this->form_validation->set_rules('username', 'Username', 'trim|required');
@@ -65,13 +83,21 @@ class Example extends CI_Controller
 				// Login
 				if($this->bitauth->login($this->input->post('username'), $this->input->post('password'), $this->input->post('remember_me')))
 				{
-					// Redirect
-					if($redir = $this->session->userdata('redir'))
+					// Check if it passed two factor auth
+					if($this->bitauth->logged_in())
 					{
-						$this->session->unset_userdata('redir');
-					}
+						// Not require two factor auth
+						if($redir = $this->session->userdata('redir'))
+						{
+							$this->session->unset_userdata('redir');
+						}
 
-					redirect($redir ? $redir : 'example');
+						redirect($redir ? $redir : 'example');
+					} else {
+						// Redirect to enter challange code
+						redirect('example/twofactorauth');
+					}
+					
 				}
 				else
 				{
@@ -192,6 +218,7 @@ class Example extends CI_Controller
 			$this->form_validation->set_rules('email', 'Email', 'trim|required|valid_email');
 			$this->form_validation->set_rules('active', 'Active', '');
 			$this->form_validation->set_rules('enabled', 'Enabled', '');
+			$this->form_validation->set_rules('google_auth', 'Two Factor Auth', '');
 			$this->form_validation->set_rules('password_never_expires', 'Password Never Expires', '');
 			$this->form_validation->set_rules('groups[]', 'Groups', '');
 
@@ -356,6 +383,45 @@ class Example extends CI_Controller
 	{
 		$this->bitauth->logout();
 		redirect('example');
+	}
+
+	/**
+	 * Example::twofactorauth()
+	 *
+	 */
+	public function twofactorauth()
+	{
+		$data = array();
+
+		if($this->bitauth->logged_in())
+		{
+			redirect('example');
+		}
+
+		if($this->input->post())
+		{
+			$this->form_validation->set_rules('token', 'Token', 'required');
+
+			if($this->form_validation->run() === TRUE)
+			{
+				if($this->bitauth->validate_gauth_code($this->input->post('token'),$this->session->userdata($this->bitauth->_cookie_elem_prefix.'user_id')))
+				{
+					if($redir = $this->session->userdata('redir'))
+					{
+						$this->session->unset_userdata('redir');
+					}
+
+					redirect($redir ? $redir : 'example');
+				} else 
+				{
+					$data['error'] = $this->bitauth->get_error();
+				}
+			} else {
+				$data['error'] = validation_errors();
+			}
+		}
+
+		$this->load->view('example/two_factor_auth', $data);
 	}
 
 }

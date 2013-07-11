@@ -1,13 +1,14 @@
 -- phpMyAdmin SQL Dump
--- version 3.3.9
+-- version 3.4.11.1deb1
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Aug 20, 2011 at 03:19 PM
--- Server version: 5.1.53
--- PHP Version: 5.3.4
+-- Generation Time: Jul 07, 2013 at 06:20 AM
+-- Server version: 5.5.31
+-- PHP Version: 5.4.6-1ubuntu1.2
 
 SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";
+SET time_zone = "+00:00";
 
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -59,8 +60,8 @@ CREATE TABLE IF NOT EXISTS `bitauth_groups` (
 --
 
 INSERT INTO `bitauth_groups` (`group_id`, `name`, `description`, `roles`) VALUES
-(1, 'Administrators', 'Administrators (Full Access)', 1),
-(2, 'Users', 'Default User Group', 0);
+(1, 'Administrators', 'Administrators (Full Access)', '1'),
+(2, 'Users', 'Default User Group', '0');
 
 -- --------------------------------------------------------
 
@@ -77,11 +78,6 @@ CREATE TABLE IF NOT EXISTS `bitauth_logins` (
   PRIMARY KEY (`login_id`),
   KEY `user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
-
---
--- Dumping data for table `bitauth_logins`
---
-
 
 -- --------------------------------------------------------
 
@@ -123,6 +119,8 @@ CREATE TABLE IF NOT EXISTS `bitauth_users` (
   `forgot_code` varchar(40) NOT NULL,
   `forgot_generated` datetime NOT NULL,
   `enabled` tinyint(1) NOT NULL DEFAULT '1',
+  `google_auth` tinyint(1) NOT NULL DEFAULT '0',
+  `google_key` varchar(20) NOT NULL,
   `last_login` datetime NOT NULL,
   `last_login_ip` int(10) NOT NULL,
   PRIMARY KEY (`user_id`)
@@ -132,5 +130,9 @@ CREATE TABLE IF NOT EXISTS `bitauth_users` (
 -- Dumping data for table `bitauth_users`
 --
 
-INSERT INTO `bitauth_users` (`user_id`, `username`, `password`, `password_last_set`, `password_never_expires`, `remember_me`, `activation_code`, `active`, `forgot_code`, `forgot_generated`, `enabled`, `last_login`, `last_login_ip`) VALUES
-(1, 'admin', '$2a$08$560JEYl2Np/7/6RLc/mq/ecnumuBXig3e.pHh1lnH1pgpk94sTZhu', now(), 0, '', '', 1, '', '0000-00-00 00:00:00', 1, '0000-00-00 00:00:00', 0);
+INSERT INTO `bitauth_users` (`user_id`, `username`, `password`, `password_last_set`, `password_never_expires`, `remember_me`, `activation_code`, `active`, `forgot_code`, `forgot_generated`, `enabled`, `google_auth`, `google_key`, `last_login`, `last_login_ip`) VALUES
+(1, 'admin', '$2a$08$560JEYl2Np/7/6RLc/mq/ecnumuBXig3e.pHh1lnH1pgpk94sTZhu', '2013-07-07 06:13:56', 0, '', '', 1, '', '0000-00-00 00:00:00', 1, 0, '', '0000-00-00 00:00:00', 0);
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
